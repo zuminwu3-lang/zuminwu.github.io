@@ -1,823 +1,95 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>ZUMIN WU — Biomedical Engineering</title>
+    <title>ZUMIN</title>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
         body {
-            background: #080808;
-            color: #f5f5f5;
+            max-width: 800px;
+            margin: 80px auto;
+            padding: 0 20px;
+
             font-family:
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
                 Arial,
+                "Microsoft YaHei",
                 sans-serif;
-            overflow-x: hidden;
+
+            color: #222;
+            background: #fff;
         }
 
-        /* 背景网格 */
-
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-
-            background-image:
-                linear-gradient(
-                    rgba(255,255,255,0.035) 1px,
-                    transparent 1px
-                ),
-                linear-gradient(
-                    90deg,
-                    rgba(255,255,255,0.035) 1px,
-                    transparent 1px
-                );
-
-            background-size: 60px 60px;
-
-            mask-image:
-                linear-gradient(
-                    to bottom,
-                    black 0%,
-                    transparent 80%
-                );
-
-            pointer-events: none;
-            z-index: -2;
-        }
-
-        /* 顶部导航 */
-
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-
-            height: 76px;
-
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            padding: 0 7vw;
-
-            background: rgba(8,8,8,0.72);
-            backdrop-filter: blur(16px);
-
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 0.18em;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 36px;
-        }
-
-        .nav-links a {
-            color: #999;
-            text-decoration: none;
-            font-size: 13px;
-            letter-spacing: 0.12em;
-            transition: 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: white;
-        }
-
-        /* 首页 */
-
-        .hero {
-            min-height: 100vh;
-
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-
-            padding: 120px 10vw 80px;
-
-            position: relative;
-        }
-
-        .hero::after {
-            content: "";
-
-            position: absolute;
-
-            width: 500px;
-            height: 500px;
-
-            right: -150px;
-            top: 100px;
-
-            background: rgba(255,255,255,0.055);
-
-            filter: blur(100px);
-
-            border-radius: 50%;
-
-            z-index: -1;
-        }
-
-        .eyebrow {
-            color: #888;
-
-            font-size: 13px;
-
-            letter-spacing: 0.3em;
-
-            margin-bottom: 28px;
-        }
-
-        .hero h1 {
-            max-width: 1000px;
-
-            font-size: clamp(58px, 9vw, 140px);
-
-            line-height: 0.9;
-
-            letter-spacing: -0.065em;
-
-            font-weight: 800;
-        }
-
-        .hero h1 span {
-            color: #777;
+        h1 {
+            font-size: 40px;
+            margin-bottom: 10px;
         }
 
         .description {
-            margin-top: 42px;
-
-            max-width: 600px;
-
-            font-size: 18px;
-
-            line-height: 1.7;
-
-            color: #999;
+            color: #888;
+            margin-bottom: 50px;
         }
 
-        .description strong {
-            color: #eee;
-        }
-
-        .hero-buttons {
-            margin-top: 42px;
-
+        .menu {
             display: flex;
-
-            gap: 14px;
-
-            flex-wrap: wrap;
-        }
-
-        .button {
-            padding: 14px 22px;
-
-            border: 1px solid #444;
-
-            color: white;
-
-            text-decoration: none;
-
-            font-size: 12px;
-
-            letter-spacing: 0.12em;
-
-            transition: 0.3s;
-        }
-
-        .button:hover {
-            background: white;
-            color: black;
-            border-color: white;
-        }
-
-        .button.primary {
-            background: white;
-            color: black;
-            border-color: white;
-        }
-
-        .button.primary:hover {
-            background: transparent;
-            color: white;
-        }
-
-        .scroll {
-            position: absolute;
-
-            bottom: 38px;
-            left: 10vw;
-
-            color: #555;
-
-            font-size: 11px;
-
-            letter-spacing: 0.25em;
-        }
-
-        /* 通用 section */
-
-        section {
-            padding: 140px 10vw;
-        }
-
-        .section-label {
-            color: #666;
-
-            font-size: 11px;
-
-            letter-spacing: 0.3em;
-
-            margin-bottom: 55px;
-        }
-
-        /* About */
-
-        .about-grid {
-            display: grid;
-
-            grid-template-columns:
-                1fr 2fr;
-
-            gap: 80px;
-        }
-
-        .about-title {
-            font-size: 42px;
-
-            letter-spacing: -0.04em;
-        }
-
-        .about-text {
-            color: #999;
-
-            font-size: 18px;
-
-            line-height: 1.9;
-        }
-
-        .about-text p {
-            margin-bottom: 25px;
-        }
-
-        /* 项目 */
-
-        .projects {
-            border-top: 1px solid #222;
-        }
-
-        .project {
-            display: grid;
-
-            grid-template-columns:
-                90px 1fr auto;
-
-            align-items: center;
-
-            padding: 38px 0;
-
-            border-bottom: 1px solid #222;
-
-            text-decoration: none;
-
-            color: white;
-
-            transition: 0.35s;
-        }
-
-        .project:hover {
-            padding-left: 20px;
-            padding-right: 20px;
-
-            background: rgba(255,255,255,0.035);
-        }
-
-        .project-number {
-            color: #555;
-
-            font-size: 12px;
-
-            letter-spacing: 0.1em;
-        }
-
-        .project-name {
-            font-size: clamp(24px, 3vw, 42px);
-
-            letter-spacing: -0.04em;
-        }
-
-        .project-info {
-            color: #777;
-
-            font-size: 12px;
-
-            margin-top: 9px;
-
-            letter-spacing: 0.08em;
-        }
-
-        .project-arrow {
-            font-size: 28px;
-
-            color: #777;
-
-            transition: 0.3s;
-        }
-
-        .project:hover .project-arrow {
-            color: white;
-            transform: translateX(8px);
-        }
-
-        /* Skills */
-
-        .skills {
-            border-top: 1px solid #222;
-        }
-
-        .skill-list {
-            display: flex;
-
-            flex-wrap: wrap;
-
-            gap: 10px;
-        }
-
-        .skill {
-            border: 1px solid #2c2c2c;
-
-            padding: 13px 18px;
-
-            color: #999;
-
-            font-size: 13px;
-
-            transition: 0.3s;
-        }
-
-        .skill:hover {
-            color: white;
-
-            border-color: #666;
-
-            transform: translateY(-3px);
-        }
-
-        /* 联系 */
-
-        .contact {
-            min-height: 70vh;
-
-            display: flex;
-
             flex-direction: column;
-
-            justify-content: center;
-
-            border-top: 1px solid #222;
+            gap: 15px;
         }
 
-        .contact h2 {
-            font-size: clamp(55px, 9vw, 130px);
+        .menu a {
+            display: block;
 
-            line-height: 0.9;
+            padding: 20px;
 
-            letter-spacing: -0.07em;
-        }
+            border: 1px solid #ddd;
 
-        .contact h2 span {
-            color: #555;
-        }
-
-        .contact-email {
-            margin-top: 45px;
-
-            color: #aaa;
+            color: #222;
 
             text-decoration: none;
 
-            font-size: 18px;
-
-            border-bottom: 1px solid #444;
-
-            width: fit-content;
-
-            padding-bottom: 6px;
-
-            transition: 0.3s;
+            font-size: 20px;
         }
 
-        .contact-email:hover {
-            color: white;
-
-            border-color: white;
+        .menu a:hover {
+            background: #f5f5f5;
         }
-
-        /* Footer */
-
-        footer {
-            padding: 30px 10vw;
-
-            border-top: 1px solid #222;
-
-            display: flex;
-
-            justify-content: space-between;
-
-            color: #555;
-
-            font-size: 11px;
-
-            letter-spacing: 0.12em;
-        }
-
-        /* 手机端 */
-
-        @media (max-width: 700px) {
-
-            nav {
-                padding: 0 6vw;
-            }
-
-            .nav-links {
-                gap: 16px;
-            }
-
-            .nav-links a {
-                font-size: 10px;
-            }
-
-            .hero {
-                padding-left: 7vw;
-                padding-right: 7vw;
-            }
-
-            .hero h1 {
-                font-size: 58px;
-            }
-
-            section {
-                padding: 100px 7vw;
-            }
-
-            .about-grid {
-                grid-template-columns: 1fr;
-
-                gap: 30px;
-            }
-
-            .project {
-                grid-template-columns:
-                    50px 1fr auto;
-            }
-
-            .project-name {
-                font-size: 24px;
-            }
-
-            footer {
-                padding: 25px 7vw;
-            }
-        }
-
     </style>
 </head>
 
 <body>
 
-    <!-- 导航 -->
+    <h1>ZUMIN</h1>
 
-    <nav>
+    <div class="description">
+        记录一些生活。
+    </div>
 
-        <div class="logo">
-            ZUMIN.WU
-        </div>
+    <div class="menu">
 
-        <div class="nav-links">
+        <a href="life.html">
+            日常
+        </a>
 
-            <a href="#about">
-                ABOUT
-            </a>
+        <a href="journal.html">
+            随笔
+        </a>
 
-            <a href="#projects">
-                PROJECTS
-            </a>
+        <a href="travel.html">
+            旅行
+        </a>
 
-            <a href="#contact">
-                CONTACT
-            </a>
+        <a href="music.html">
+            音乐
+        </a>
 
-        </div>
+        <a href="books.html">
+            阅读
+        </a>
 
-    </nav>
-
-
-    <!-- 首页 -->
-
-    <main>
-
-        <section class="hero">
-
-            <div class="eyebrow">
-                BIOMEDICAL ENGINEERING · AI
-            </div>
-
-            <h1>
-                I BUILD<br>
-                <span>AT THE</span><br>
-                INTERSECTION.
-            </h1>
-
-            <div class="description">
-
-                Exploring the intersection of
-
-                <strong>
-                    biology, engineering and artificial intelligence.
-                </strong>
-
-                <br>
-
-                Currently working with machine learning,
-                biomedical signals and medical data.
-
-            </div>
-
-            <div class="hero-buttons">
-
-                <a
-                    href="#projects"
-                    class="button primary"
-                >
-                    EXPLORE PROJECTS ↓
-                </a>
-
-                <a
-                    href="https://github.com/zuminwu3-lang"
-                    target="_blank"
-                    class="button"
-                >
-                    GITHUB ↗
-                </a>
-
-            </div>
-
-            <div class="scroll">
-                SCROLL TO EXPLORE ↓
-            </div>
-
-        </section>
-
-
-        <!-- ABOUT -->
-
-        <section id="about">
-
-            <div class="section-label">
-                01 — ABOUT
-            </div>
-
-            <div class="about-grid">
-
-                <div>
-
-                    <h2 class="about-title">
-                        About<br>
-                        Me.
-                    </h2>
-
-                </div>
-
-                <div class="about-text">
-
-                    <p>
-                        I'm a biomedical engineering student
-                        interested in the intersection of
-                        medicine, engineering and artificial intelligence.
-                    </p>
-
-                    <p>
-                        My current focus includes
-                        <strong>EMG signal processing</strong>,
-                        machine learning and medical data analysis.
-                    </p>
-
-                    <p>
-                        I enjoy turning raw biomedical data
-                        into models, visualizations and
-                        meaningful insights.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- PROJECTS -->
-
-        <section
-            id="projects"
-            class="projects"
-        >
-
-            <div class="section-label">
-                02 — SELECTED WORK
-            </div>
-
-
-            <a class="project" href="#">
-
-                <div class="project-number">
-                    01
-                </div>
-
-                <div>
-
-                    <div class="project-name">
-                        EMG Gesture Recognition
-                    </div>
-
-                    <div class="project-info">
-                        SIGNAL PROCESSING · MACHINE LEARNING · PYTORCH
-                    </div>
-
-                </div>
-
-                <div class="project-arrow">
-                    →
-                </div>
-
-            </a>
-
-
-            <a class="project" href="#">
-
-                <div class="project-number">
-                    02
-                </div>
-
-                <div>
-
-                    <div class="project-name">
-                        Machine Learning
-                    </div>
-
-                    <div class="project-info">
-                        PYTHON · SCIKIT-LEARN · DATA ANALYSIS
-                    </div>
-
-                </div>
-
-                <div class="project-arrow">
-                    →
-                </div>
-
-            </a>
-
-
-            <a class="project" href="#">
-
-                <div class="project-number">
-                    03
-                </div>
-
-                <div>
-
-                    <div class="project-name">
-                        Medical Engineering
-                    </div>
-
-                    <div class="project-info">
-                        BIOMEDICAL ENGINEERING · MEDICAL TECHNOLOGY
-                    </div>
-
-                </div>
-
-                <div class="project-arrow">
-                    →
-                </div>
-
-            </a>
-
-        </section>
-
-
-        <!-- SKILLS -->
-
-        <section class="skills">
-
-            <div class="section-label">
-                03 — TOOLKIT
-            </div>
-
-            <div class="skill-list">
-
-                <div class="skill">
-                    Python
-                </div>
-
-                <div class="skill">
-                    PyTorch
-                </div>
-
-                <div class="skill">
-                    NumPy
-                </div>
-
-                <div class="skill">
-                    Pandas
-                </div>
-
-                <div class="skill">
-                    Scikit-learn
-                </div>
-
-                <div class="skill">
-                    Signal Processing
-                </div>
-
-                <div class="skill">
-                    Machine Learning
-                </div>
-
-                <div class="skill">
-                    EMG
-                </div>
-
-                <div class="skill">
-                    Medical Imaging
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- CONTACT -->
-
-        <section
-            id="contact"
-            class="contact"
-        >
-
-            <div class="section-label">
-                04 — CONTACT
-            </div>
-
-            <h2>
-                LET'S<br>
-                <span>CONNECT.</span>
-            </h2>
-
-            <a
-                href="mailto:zuminwu3@gmail.com"
-                class="contact-email"
-            >
-                zuminwu3@gmail.com →
-            </a>
-
-        </section>
-
-    </main>
-
-
-    <footer>
-
-        <div>
-            © 2026 ZUMIN WU
-        </div>
-
-        <div>
-            BUILT WITH HTML · CSS
-        </div>
-
-    </footer>
+    </div>
 
 </body>
+
 </html>

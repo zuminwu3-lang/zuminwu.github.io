@@ -1,0 +1,276 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>日常 - ZUMIN</title>
+
+    <style>
+        body {
+            max-width: 800px;
+            margin: 80px auto;
+            padding: 0 20px;
+
+            font-family:
+                Arial,
+                "Microsoft YaHei",
+                sans-serif;
+
+            color: #222;
+            background: #fff;
+        }
+
+        a {
+            color: #222;
+            text-decoration: none;
+        }
+
+        .back {
+            display: inline-block;
+            margin-bottom: 40px;
+            color: #888;
+        }
+
+        .back:hover {
+            color: #222;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 40px;
+        }
+
+        .article {
+            padding: 20px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .article-title {
+            font-size: 24px;
+        }
+
+        .article-title:hover {
+            text-decoration: underline;
+        }
+
+        .empty {
+            color: #999;
+        }
+
+        .error {
+            color: #c00;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <!-- 返回首页 -->
+
+    <a class="back" href="index.html">
+        ← 返回首页
+    </a>
+
+
+    <!-- 页面标题 -->
+
+    <h1>日常</h1>
+
+
+    <!-- 文章列表 -->
+
+    <div id="articles">
+        正在加载文章……
+    </div>
+
+
+    <script>
+
+        // ========================================
+        // Supabase 配置
+        // ========================================
+
+        const SUPABASE_URL =
+            "https://kgmhpsoiqnjszkrknqki.supabase.co";
+
+        const SUPABASE_KEY =
+            "sb_publishable_JWBaBcQORvM6wsqoA7ivzQ_GhCA3hv1";
+
+
+        // ========================================
+        // 获取文章
+        // ========================================
+
+        async function loadArticles() {
+
+            const container =
+                document.getElementById("articles");
+
+
+            try {
+
+                // 从 articles 表获取「日常」文章
+
+const url =
+    SUPABASE_URL +
+    "/rest/v1/articles" +
+    "?select=id,title,category";
+
+
+                const response =
+                    await fetch(url, {
+
+                        method: "GET",
+
+                        headers: {
+
+                            "apikey": SUPABASE_KEY,
+
+                            "Authorization":
+                                "Bearer " + SUPABASE_KEY
+
+                        }
+
+                    });
+
+
+                // 检查请求是否成功
+
+                if (!response.ok) {
+
+                    const errorText =
+                        await response.text();
+
+                    console.error(
+                        "Supabase 错误：",
+                        errorText
+                    );
+
+                    throw new Error(
+                        "数据库请求失败"
+                    );
+                }
+
+
+                // 转换成 JSON
+
+                const articles =
+                    await response.json();
+
+
+                console.log(
+                    "获取到的文章：",
+                    articles
+                );
+
+
+                // ========================================
+                // 没有文章
+                // ========================================
+
+                if (articles.length === 0) {
+
+                    container.innerHTML = `
+                        <p class="empty">
+                            这里还没有文章。
+                        </p>
+                    `;
+
+                    return;
+                }
+
+
+                // ========================================
+                // 显示文章
+                // ========================================
+
+                container.innerHTML = "";
+
+
+                articles.forEach(article => {
+
+                    const div =
+                        document.createElement("div");
+
+
+                    div.className =
+                        "article";
+
+
+                    div.innerHTML = `
+
+                        <a
+                            class="article-title"
+                            href="article.html?id=${article.id}"
+                        >
+                            ${escapeHTML(article.title)}
+                        </a>
+
+                    `;
+
+
+                    container.appendChild(div);
+
+                });
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "加载文章失败：",
+                    error
+                );
+
+
+                container.innerHTML = `
+
+                    <p class="error">
+                        文章加载失败。
+                    </p>
+
+                    <p>
+                        请打开浏览器控制台查看错误信息。
+                    </p>
+
+                `;
+
+            }
+
+        }
+
+
+        // ========================================
+        // 防止标题中的 HTML 影响页面
+        // ========================================
+
+        function escapeHTML(text) {
+
+            const div =
+                document.createElement("div");
+
+            div.textContent =
+                text;
+
+            return div.innerHTML;
+
+        }
+
+
+        // ========================================
+        // 页面加载完成后执行
+        // ========================================
+
+        loadArticles();
+
+    </script>
+
+</body>
+
+</html>
+```
