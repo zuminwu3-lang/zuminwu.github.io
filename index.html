@@ -1,80 +1,872 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>ZUMIN · 云端日记</title>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{max-width:800px;margin:60px auto;padding:0 24px;font-family:-apple-system,'Microsoft YaHei',sans-serif;background:#fafaf8;color:#1e1e1e}
-        .container{background:rgba(255,255,255,0.7);border-radius:32px;padding:40px 36px 44px;border:1px solid rgba(255,255,255,0.5)}
-        h1{font-size:44px;font-weight:550;margin-bottom:4px}
-        .subhead{color:#7a7a7a;font-size:16px;margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid #eaeaea;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-        .status-badge{padding:4px 16px;border-radius:40px;font-size:13px;color:#5a5a5a;background:#e8e8e4}
-        .status-badge.online{background:#d4edda;color:#155724}
-        .status-badge.offline{background:#f8d7da;color:#721c24}
-        .entry-area{background:#fff;border-radius:24px;padding:24px;margin-bottom:32px;border:1px solid #ecece8}
-        .entry-area textarea{width:100%;min-height:120px;padding:14px 16px;border:1px solid #e0e0dc;border-radius:18px;font-size:16px;font-family:inherit;background:#fcfcfa;resize:vertical}
-        .entry-area textarea:focus{outline:none;border-color:#b0b0a8}
-        .entry-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:16px}
-        .entry-actions button{padding:10px 28px;border:none;border-radius:40px;font-size:16px;font-weight:450;background:#1e1e1e;color:#fff;cursor:pointer;transition:all .2s;font-family:inherit}
-        .entry-actions button:hover{background:#333;transform:translateY(-2px)}
-        .entry-actions button:disabled{opacity:.5;cursor:not-allowed;transform:none}
-        .diary-list{display:flex;flex-direction:column;gap:16px}
-        .diary-item{background:#fff;border-radius:20px;padding:20px 24px;border:1px solid #ecece8}
-        .diary-item:hover{border-color:#d8d8d2}
-        .diary-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;flex-wrap:wrap;gap:6px}
-        .diary-date{font-size:14px;font-weight:450;color:#4a4a4a}
-        .diary-actions button{background:transparent;border:none;color:#9a9a94;cursor:pointer;padding:2px 8px;border-radius:12px;font-size:14px}
-        .diary-actions button:hover{color:#c0392b;background:#fde8e5}
-        .diary-content{font-size:16px;white-space:pre-wrap;word-break:break-word;line-height:1.7}
-        .diary-checkbox{margin-right:10px;transform:scale(1.2);cursor:pointer}
-        .diary-item.completed .diary-content{text-decoration:line-through;color:#999}
-        .empty-state{text-align:center;padding:40px 16px;color:#b0b0aa;background:#f8f8f5;border-radius:24px;border:1px dashed #d8d8d2}
-        .empty-state span{font-size:28px;display:block;margin-bottom:12px}
-        .loading{text-align:center;padding:20px;color:#7a7a7a}
-        @media(max-width:520px){body{margin:30px auto;padding:0 16px}.container{padding:28px 18px 32px}h1{font-size:36px}.entry-area{padding:16px}.diary-item{padding:16px 18px}}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 0 24px;
+
+            font-family: -apple-system, "Microsoft YaHei", sans-serif;
+
+            background: #fafaf8;
+            color: #1e1e1e;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.7);
+
+            border-radius: 32px;
+
+            padding: 40px 36px 44px;
+
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        h1 {
+            font-size: 44px;
+            font-weight: 550;
+
+            margin-bottom: 4px;
+        }
+
+        .subhead {
+            color: #7a7a7a;
+
+            font-size: 16px;
+
+            margin-bottom: 32px;
+
+            padding-bottom: 20px;
+
+            border-bottom: 1px solid #eaeaea;
+
+            display: flex;
+
+            justify-content: space-between;
+            align-items: center;
+
+            flex-wrap: wrap;
+
+            gap: 8px;
+        }
+
+        .status-badge {
+            padding: 4px 16px;
+
+            border-radius: 40px;
+
+            font-size: 13px;
+
+            color: #5a5a5a;
+
+            background: #e8e8e4;
+        }
+
+        .status-badge.online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .entry-area {
+            background: #fff;
+
+            border-radius: 24px;
+
+            padding: 24px;
+
+            margin-bottom: 32px;
+
+            border: 1px solid #ecece8;
+        }
+
+        textarea {
+            width: 100%;
+
+            min-height: 130px;
+
+            padding: 14px 16px;
+
+            border: 1px solid #e0e0dc;
+
+            border-radius: 18px;
+
+            font-size: 16px;
+
+            font-family: inherit;
+
+            background: #fcfcfa;
+
+            resize: vertical;
+
+            line-height: 1.7;
+        }
+
+        textarea:focus {
+            outline: none;
+
+            border-color: #999;
+        }
+
+        .entry-actions {
+            display: flex;
+
+            justify-content: flex-end;
+
+            gap: 12px;
+
+            margin-top: 16px;
+        }
+
+        .entry-actions button {
+            padding: 10px 28px;
+
+            border: none;
+
+            border-radius: 40px;
+
+            font-size: 16px;
+
+            background: #1e1e1e;
+
+            color: white;
+
+            cursor: pointer;
+        }
+
+        .entry-actions button:hover {
+            background: #333;
+        }
+
+        .entry-actions button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .diary-list {
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 16px;
+        }
+
+        .diary-item {
+            background: white;
+
+            border-radius: 20px;
+
+            padding: 20px 24px;
+
+            border: 1px solid #ecece8;
+        }
+
+        .diary-header {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 12px;
+
+            gap: 10px;
+        }
+
+        .diary-date {
+            font-size: 14px;
+
+            color: #777;
+        }
+
+        .diary-actions {
+            display: flex;
+
+            gap: 5px;
+        }
+
+        .diary-actions button {
+            background: transparent;
+
+            border: none;
+
+            color: #888;
+
+            cursor: pointer;
+
+            padding: 5px 10px;
+
+            border-radius: 12px;
+        }
+
+        .diary-actions button:hover {
+            background: #f1f1ed;
+
+            color: #222;
+        }
+
+        .delete-btn:hover {
+            color: #c0392b !important;
+
+            background: #fde8e5 !important;
+        }
+
+        .diary-content {
+            font-size: 16px;
+
+            white-space: pre-wrap;
+
+            word-break: break-word;
+
+            line-height: 1.8;
+        }
+
+        .empty-state {
+            text-align: center;
+
+            padding: 40px 16px;
+
+            color: #aaa;
+
+            background: #f8f8f5;
+
+            border-radius: 24px;
+
+            border: 1px dashed #d8d8d2;
+        }
+
+        .loading {
+            text-align: center;
+
+            padding: 20px;
+
+            color: #777;
+        }
+
+        @media (max-width: 520px) {
+
+            body {
+                margin: 30px auto;
+
+                padding: 0 16px;
+            }
+
+            .container {
+                padding: 28px 18px 32px;
+            }
+
+            h1 {
+                font-size: 36px;
+            }
+
+        }
+
     </style>
 </head>
+
+
 <body>
+
 <div class="container">
+
     <h1>📖 ZUMIN</h1>
+
     <div class="subhead">
+
         <span>☁️ 云端日记</span>
-        <span class="status-badge" id="statusBadge">连接中...</span>
+
+        <span
+            class="status-badge"
+            id="statusBadge">
+
+            连接中...
+
+        </span>
+
     </div>
+
+
+    <!-- 写日记 -->
+
     <div class="entry-area">
-        <textarea id="diaryInput" placeholder="今天发生了什么？写下来吧 …" rows="3"></textarea>
+
+        <textarea
+            id="diaryInput"
+            placeholder="今天发生了什么？写下来吧 …"></textarea>
+
         <div class="entry-actions">
-            <button id="saveBtn">✧ 发布日记</button>
+
+            <button id="saveBtn">
+                ✧ 发布日记
+            </button>
+
         </div>
+
     </div>
-    <div id="diaryList" class="diary-list">
-        <div class="loading">⏳ 加载中...</div>
+
+
+    <!-- 日记列表 -->
+
+    <div
+        id="diaryList"
+        class="diary-list">
+
+        <div class="loading">
+            ⏳ 加载中...
+        </div>
+
     </div>
+
 </div>
+
+
 <script>
-const SUPABASE_URL='https://kgmhpsoiqnjszkrknqki.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s';
-const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-const diaryList=document.getElementById('diaryList');
-const diaryInput=document.getElementById('diaryInput');
-const saveBtn=document.getElementById('saveBtn');
-const statusBadge=document.getElementById('statusBadge');
-let entries=[];
-function setStatus(o){statusBadge.textContent=o?'✅ 在线':'❌ 离线';statusBadge.className='status-badge '+(o?'online':'offline');}
-function escapeHtml(t){if(!t)return '';const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
-async function loadEntries(){try{const{data,error}=await supabase.from('todos').select('*').order('id',{ascending:false});if(error)throw error;entries=data||[];setStatus(true);renderEntries();}catch(err){console.error(err);setStatus(false);diaryList.innerHTML='<div class="empty-state"><span>⚠️</span>加载失败: '+escapeHtml(err.message)+'<br><small style="color:#999;">请检查配置</small></div>';}}
-function renderEntries(){if(entries.length===0){diaryList.innerHTML='<div class="empty-state"><span>📭</span>还没有日记，写一篇吧 ✍️</div>';return;}let html='';for(const e of entries){const d=e.inserted_at?new Date(e.inserted_at):new Date();const ds=d.toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});const c=escapeHtml(e.task||e.content||'');const done=e.is_complete||false;html+='<div class="diary-item '+(done?'completed':'')+'"><div class="diary-header"><div class="diary-date"><input type="checkbox" class="diary-checkbox" '+(done?'checked':'')+' onchange="toggleComplete('+e.id+', this.checked)" /> 📅 '+ds+'</div><div class="diary-actions"><button onclick="deleteEntry('+e.id+')">✕</button></div></div><div class="diary-content">'+c+'</div></div>';}diaryList.innerHTML=html;}
-async function addEntry(c){if(!c||c.trim()===''){alert('请写点内容～');return;}saveBtn.disabled=true;saveBtn.textContent='⏳ 发布中...';try{const{error}=await supabase.from('todos').insert([{task:c.trim(),is_complete:false}]);if(error)throw error;diaryInput.value='';await loadEntries();setStatus(true);}catch(err){console.error(err);setStatus(false);alert('发布失败: '+err.message);}finally{saveBtn.disabled=false;saveBtn.textContent='✧ 发布日记';}}
-window.toggleComplete=async function(id,checked){try{const{error}=await supabase.from('todos').update({is_complete:checked}).eq('id',id);if(error)throw error;await loadEntries();}catch(err){console.error(err);alert('更新失败: '+err.message);}};
-window.deleteEntry=async function(id){if(!confirm('确定删除吗？'))return;try{const{error}=await supabase.from('todos').delete().eq('id',id);if(error)throw error;await loadEntries();}catch(err){console.error(err);alert('删除失败: '+err.message);}};
-saveBtn.addEventListener('click',()=>addEntry(diaryInput.value));
-diaryInput.addEventListener('keydown',(e)=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();saveBtn.click();}});
-loadEntries();
-diaryInput.focus();
-console.log('📖 ZUMIN 日记已启动！');
+
+    /* ==============================
+       Supabase
+       ============================== */
+
+    const SUPABASE_URL =
+        "https://kgmhpsoiqnjszkrknqki.supabase.co";
+
+
+    const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s";
+
+
+    const supabase =
+        window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY
+        );
+
+
+    /* ==============================
+       页面元素
+       ============================== */
+
+    const diaryList =
+        document.getElementById("diaryList");
+
+    const diaryInput =
+        document.getElementById("diaryInput");
+
+    const saveBtn =
+        document.getElementById("saveBtn");
+
+    const statusBadge =
+        document.getElementById("statusBadge");
+
+
+    let entries = [];
+
+
+    /* ==============================
+       在线状态
+       ============================== */
+
+    function setStatus(online) {
+
+        if (online) {
+
+            statusBadge.textContent =
+                "✅ 在线";
+
+            statusBadge.className =
+                "status-badge online";
+
+        } else {
+
+            statusBadge.textContent =
+                "❌ 离线";
+
+            statusBadge.className =
+                "status-badge offline";
+
+        }
+
+    }
+
+
+    /* ==============================
+       防止 HTML 注入
+       ============================== */
+
+    function escapeHtml(text) {
+
+        const div =
+            document.createElement("div");
+
+        div.textContent =
+            text || "";
+
+        return div.innerHTML;
+
+    }
+
+
+    /* ==============================
+       读取所有日记
+       ============================== */
+
+    async function loadEntries() {
+
+        try {
+
+            const {
+                data,
+                error
+            } =
+            await supabase
+                .from("todos")
+                .select("*")
+                .order(
+                    "id",
+                    {
+                        ascending: false
+                    }
+                );
+
+
+            if (error)
+                throw error;
+
+
+            entries =
+                data || [];
+
+
+            setStatus(true);
+
+
+            renderEntries();
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            setStatus(false);
+
+
+            diaryList.innerHTML = `
+
+                <div class="empty-state">
+
+                    ⚠️ 数据加载失败
+
+                    <br><br>
+
+                    ${escapeHtml(error.message)}
+
+                </div>
+
+            `;
+
+        }
+
+    }
+
+
+    /* ==============================
+       显示日记
+       ============================== */
+
+    function renderEntries() {
+
+        if (entries.length === 0) {
+
+            diaryList.innerHTML = `
+
+                <div class="empty-state">
+
+                    📭
+
+                    <br><br>
+
+                    还没有日记。
+
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        let html = "";
+
+
+        for (const entry of entries) {
+
+            const date =
+                entry.inserted_at
+                    ? new Date(entry.inserted_at)
+                    : new Date();
+
+
+            const dateString =
+                date.toLocaleString(
+                    "zh-CN",
+                    {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }
+                );
+
+
+            html += `
+
+                <div class="diary-item">
+
+                    <div class="diary-header">
+
+                        <div class="diary-date">
+
+                            📅 ${dateString}
+
+                        </div>
+
+
+                        <div class="diary-actions">
+
+                            <button
+                                onclick="editEntry(${entry.id})">
+
+                                编辑
+
+                            </button>
+
+
+                            <button
+                                class="delete-btn"
+                                onclick="deleteEntry(${entry.id})">
+
+                                删除
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="diary-content">
+
+                        ${escapeHtml(entry.task)}
+
+                    </div>
+
+                </div>
+
+            `;
+
+        }
+
+
+        diaryList.innerHTML =
+            html;
+
+    }
+
+
+    /* ==============================
+       新建日记
+       ============================== */
+
+    async function addEntry(content) {
+
+        content =
+            content.trim();
+
+
+        if (!content) {
+
+            alert("请先写点东西～");
+
+            return;
+
+        }
+
+
+        saveBtn.disabled =
+            true;
+
+
+        saveBtn.textContent =
+            "⏳ 保存中...";
+
+
+        try {
+
+            const {
+                error
+            } =
+            await supabase
+                .from("todos")
+                .insert([
+                    {
+                        task: content,
+                        is_complete: false
+                    }
+                ]);
+
+
+            if (error)
+                throw error;
+
+
+            diaryInput.value =
+                "";
+
+
+            await loadEntries();
+
+
+        } catch (error) {
+
+            console.error(error);
+
+
+            alert(
+                "发布失败：\n" +
+                error.message
+            );
+
+
+        } finally {
+
+            saveBtn.disabled =
+                false;
+
+
+            saveBtn.textContent =
+                "✧ 发布日记";
+
+        }
+
+    }
+
+
+    /* ==============================
+       编辑日记
+       ============================== */
+
+    window.editEntry =
+        async function(id) {
+
+            const entry =
+                entries.find(
+                    item =>
+                        item.id === id
+                );
+
+
+            if (!entry)
+                return;
+
+
+            const newContent =
+                prompt(
+                    "修改日记：",
+                    entry.task
+                );
+
+
+            /* 点击取消 */
+
+            if (newContent === null)
+                return;
+
+
+            /* 空内容 */
+
+            if (!newContent.trim()) {
+
+                alert(
+                    "日记内容不能为空。"
+                );
+
+                return;
+
+            }
+
+
+            try {
+
+                const {
+                    error
+                } =
+                await supabase
+
+                    .from("todos")
+
+                    .update({
+
+                        task:
+                            newContent.trim()
+
+                    })
+
+                    .eq(
+                        "id",
+                        id
+                    );
+
+
+                if (error)
+                    throw error;
+
+
+                await loadEntries();
+
+
+            } catch (error) {
+
+                console.error(error);
+
+
+                alert(
+                    "修改失败：\n" +
+                    error.message
+                );
+
+            }
+
+        };
+
+
+    /* ==============================
+       删除日记
+       ============================== */
+
+    window.deleteEntry =
+        async function(id) {
+
+            const ok =
+                confirm(
+                    "确定删除这篇日记吗？"
+                );
+
+
+            if (!ok)
+                return;
+
+
+            try {
+
+                const {
+                    error
+                } =
+                await supabase
+
+                    .from("todos")
+
+                    .delete()
+
+                    .eq(
+                        "id",
+                        id
+                    );
+
+
+                if (error)
+                    throw error;
+
+
+                await loadEntries();
+
+
+            } catch (error) {
+
+                console.error(error);
+
+
+                alert(
+                    "删除失败：\n" +
+                    error.message
+                );
+
+            }
+
+        };
+
+
+    /* ==============================
+       发布按钮
+       ============================== */
+
+    saveBtn.addEventListener(
+        "click",
+        () => {
+
+            addEntry(
+                diaryInput.value
+            );
+
+        }
+    );
+
+
+    /* ==============================
+       Ctrl + Enter 发布
+       ============================== */
+
+    diaryInput.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                (event.ctrlKey ||
+                 event.metaKey)
+                &&
+                event.key === "Enter"
+            ) {
+
+                event.preventDefault();
+
+                saveBtn.click();
+
+            }
+
+        }
+    );
+
+
+    /* ==============================
+       启动
+       ============================== */
+
+    loadEntries();
+
+    diaryInput.focus();
+
+
 </script>
+
 </body>
+
 </html>
