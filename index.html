@@ -268,6 +268,7 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s';
         // ============================================================
 
+        // 只创建一次 supabase 客户端
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const diaryList = document.getElementById('diaryList');
