@@ -4,10 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZUMIN · 日记更新</title>
+    <title>ZUMIN · 云端日记</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* ----- 全局重置 & 基础 ----- */
         * {
             margin: 0;
             padding: 0;
@@ -18,27 +19,23 @@
             max-width: 800px;
             margin: 60px auto;
             padding: 0 24px;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system, 'Microsoft YaHei', sans-serif;
             background-color: #fafaf8;
             color: #1e1e1e;
-            line-height: 1.6;
         }
 
-        /* 主卡片 */
         .container {
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(2px);
             border-radius: 32px;
             padding: 40px 36px 44px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
         h1 {
             font-size: 44px;
             font-weight: 550;
-            letter-spacing: -0.02em;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             color: #141414;
         }
 
@@ -48,7 +45,6 @@
             margin-bottom: 32px;
             padding-bottom: 20px;
             border-bottom: 1px solid #eaeaea;
-            font-weight: 350;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -56,49 +52,57 @@
             gap: 8px;
         }
 
-        .subhead span {
-            background: #f0f0ec;
-            padding: 4px 14px;
+        .status-badge {
+            padding: 4px 16px;
             border-radius: 40px;
             font-size: 13px;
             color: #5a5a5a;
-            letter-spacing: 0.2px;
+            background: #e8e8e4;
         }
 
-        /* ----- 写日记区域 ----- */
+        .status-badge.online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
         .entry-area {
             background: #ffffff;
             border-radius: 24px;
-            padding: 24px 24px 20px;
+            padding: 24px;
             margin-bottom: 32px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
             border: 1px solid #ecece8;
         }
 
+        .entry-area input,
         .entry-area textarea {
             width: 100%;
-            min-height: 120px;
             padding: 14px 16px;
             border: 1px solid #e0e0dc;
             border-radius: 18px;
             font-size: 16px;
             font-family: inherit;
-            resize: vertical;
-            transition: border 0.2s;
             background: #fcfcfa;
-            color: #1e1e1e;
-            line-height: 1.6;
+            transition: border 0.2s;
         }
 
+        .entry-area input:focus,
         .entry-area textarea:focus {
             outline: none;
             border-color: #b0b0a8;
-            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
         }
 
-        .entry-area textarea::placeholder {
-            color: #b0b0aa;
-            font-weight: 350;
+        .entry-area input {
+            margin-bottom: 12px;
+        }
+
+        .entry-area textarea {
+            min-height: 120px;
+            resize: vertical;
         }
 
         .entry-actions {
@@ -106,7 +110,6 @@
             justify-content: flex-end;
             gap: 12px;
             margin-top: 16px;
-            align-items: center;
         }
 
         .entry-actions button {
@@ -119,35 +122,20 @@
             color: white;
             cursor: pointer;
             transition: all 0.2s;
-            letter-spacing: 0.3px;
             font-family: inherit;
         }
 
         .entry-actions button:hover {
             background: #333;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
         }
 
-        .entry-actions button:active {
-            transform: scale(0.97);
-        }
-
-        .entry-actions .clear-btn {
-            background: transparent;
-            color: #8a8a8a;
-            padding: 10px 12px;
-            font-size: 14px;
-        }
-
-        .entry-actions .clear-btn:hover {
-            background: #f0f0ec;
-            color: #3a3a3a;
-            box-shadow: none;
+        .entry-actions button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
             transform: none;
         }
 
-        /* ----- 日记列表 ----- */
         .diary-list {
             display: flex;
             flex-direction: column;
@@ -157,15 +145,13 @@
         .diary-item {
             background: #ffffff;
             border-radius: 20px;
-            padding: 20px 24px 18px;
+            padding: 20px 24px;
             border: 1px solid #ecece8;
             transition: all 0.15s;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.01);
         }
 
         .diary-item:hover {
             border-color: #d8d8d2;
-            background: #fefefc;
         }
 
         .diary-header {
@@ -177,66 +163,48 @@
             gap: 6px;
         }
 
-        .diary-date {
+        .diary-title {
+            font-size: 18px;
+            font-weight: 550;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .diary-meta {
             font-size: 14px;
             font-weight: 450;
             color: #4a4a4a;
-            letter-spacing: 0.2px;
-        }
-
-        .diary-date small {
-            font-weight: 350;
-            color: #9a9a94;
-            margin-left: 6px;
-        }
-
-        .diary-actions {
-            display: flex;
-            gap: 12px;
         }
 
         .diary-actions button {
             background: transparent;
             border: none;
             color: #9a9a94;
-            font-size: 14px;
             cursor: pointer;
-            padding: 2px 6px;
+            padding: 2px 8px;
             border-radius: 12px;
             transition: all 0.15s;
             font-family: inherit;
+            font-size: 14px;
         }
 
         .diary-actions button:hover {
-            color: #3a3a3a;
-            background: #f0f0ec;
-        }
-
-        .diary-actions .delete-btn:hover {
             color: #c0392b;
             background: #fde8e5;
         }
 
         .diary-content {
             font-size: 16px;
-            color: #1e1e1e;
             white-space: pre-wrap;
             word-break: break-word;
             line-height: 1.7;
-            padding-right: 4px;
+            margin-top: 6px;
         }
 
-        .diary-content p {
-            margin: 0;
-        }
-
-        /* 空状态 */
         .empty-state {
             text-align: center;
             padding: 40px 16px;
             color: #b0b0aa;
-            font-weight: 350;
-            letter-spacing: 0.3px;
             background: #f8f8f5;
             border-radius: 24px;
             border: 1px dashed #d8d8d2;
@@ -248,80 +216,85 @@
             margin-bottom: 12px;
         }
 
-        /* 移动端适配 */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7a7a7a;
+        }
+
+        .edit-textarea {
+            display: none;
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            border: 1px solid #e0e0dc;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            margin: 8px 0;
+            resize: vertical;
+        }
+
+        .edit-mode .diary-content {
+            display: none;
+        }
+
+        .edit-mode .edit-textarea {
+            display: block !important;
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .edit-actions button {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .edit-actions .save-edit {
+            background: #1e1e1e;
+            color: white;
+        }
+
+        .edit-actions .cancel-edit {
+            background: #e8e8e4;
+            color: #333;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            background: #e8e8e4;
+            color: #555;
+            margin-left: 8px;
+        }
+
         @media (max-width: 520px) {
             body {
                 margin: 30px auto;
                 padding: 0 16px;
             }
-
             .container {
                 padding: 28px 18px 32px;
-                border-radius: 24px;
             }
-
             h1 {
                 font-size: 36px;
             }
-
-            .subhead {
-                font-size: 14px;
-                margin-bottom: 24px;
-                padding-bottom: 16px;
-            }
-
             .entry-area {
-                padding: 16px 16px 18px;
+                padding: 16px;
             }
-
-            .entry-area textarea {
-                min-height: 100px;
-                font-size: 15px;
-                padding: 12px 14px;
-            }
-
-            .entry-actions button {
-                padding: 8px 20px;
-                font-size: 15px;
-            }
-
             .diary-item {
                 padding: 16px 18px;
             }
-
-            .diary-content {
-                font-size: 15px;
-            }
-        }
-
-        @media (max-width: 400px) {
-            .container {
-                padding: 20px 14px 24px;
-            }
-
-            h1 {
-                font-size: 30px;
-            }
-
-            .entry-area textarea {
-                min-height: 80px;
-            }
-        }
-
-        /* 滚动条 */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f0f0ec;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #d0d0cc;
-            border-radius: 12px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #b8b8b4;
         }
     </style>
 </head>
@@ -332,225 +305,258 @@
 
         <h1>📖 ZUMIN</h1>
         <div class="subhead">
-            <span>✧ 日记更新器 · 本地存储</span>
-            <span id="countDisplay">0 篇</span>
+            <span>☁️ 云端日记 · 随时更新</span>
+            <span class="status-badge" id="statusBadge">连接中...</span>
         </div>
 
-        <!-- 写日记区域 -->
         <div class="entry-area">
+            <input type="text" id="titleInput" placeholder="标题（可选）" />
             <textarea id="diaryInput" placeholder="今天发生了什么？写下来吧 …" rows="3"></textarea>
             <div class="entry-actions">
-                <button class="clear-btn" id="clearInputBtn" type="button">清空</button>
-                <button id="saveBtn" type="button">✧ 保存日记</button>
+                <button id="saveBtn">✧ 发布文章</button>
             </div>
         </div>
 
-        <!-- 日记列表 -->
         <div id="diaryList" class="diary-list">
-            <!-- 由 JavaScript 动态渲染 -->
+            <div class="loading">⏳ 加载中...</div>
         </div>
 
     </div>
 
     <script>
-        (function() {
-            "use strict";
+        // ============================================================
+        // 🔧 您的 Supabase 配置
+        // ============================================================
+        const SUPABASE_URL = 'https://kgmhpsoiqnjszkrknqki.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_JWBaBcQORvM6wsqoA7ivzQ_GhCA3hv1';
+        // ============================================================
 
-            // ---------- 核心数据 ----------
-            const STORAGE_KEY = 'zumin_diary_entries';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            // 读取存储的日记 (数组)
-            function getEntries() {
-                try {
-                    const raw = localStorage.getItem(STORAGE_KEY);
-                    if (!raw) return [];
-                    const parsed = JSON.parse(raw);
-                    return Array.isArray(parsed) ? parsed : [];
-                } catch (_) {
-                    return [];
-                }
+        const diaryList = document.getElementById('diaryList');
+        const diaryInput = document.getElementById('diaryInput');
+        const titleInput = document.getElementById('titleInput');
+        const saveBtn = document.getElementById('saveBtn');
+        const statusBadge = document.getElementById('statusBadge');
+
+        let entries = [];
+        let editingId = null;
+
+        function setStatus(online) {
+            statusBadge.textContent = online ? '✅ 在线' : '❌ 离线';
+            statusBadge.className = 'status-badge ' + (online ? 'online' : 'offline');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ---------- 加载数据 ----------
+        async function loadEntries() {
+            try {
+                const { data, error } = await supabase
+                    .from('articles')
+                    .select('*')
+                    .order('id', { ascending: false });
+
+                if (error) throw error;
+
+                entries = data || [];
+                setStatus(true);
+                renderEntries();
+            } catch (err) {
+                console.error('加载失败:', err);
+                setStatus(false);
+                diaryList.innerHTML = `
+                    <div class="empty-state">
+                        <span>⚠️</span>
+                        加载失败: ${err.message}<br>
+                        <small style="color:#999;">请检查 Supabase 配置</small>
+                    </div>
+                `;
+            }
+        }
+
+        // ---------- 渲染 ----------
+        function renderEntries() {
+            if (entries.length === 0) {
+                diaryList.innerHTML = `
+                    <div class="empty-state">
+                        <span>📭</span>
+                        还没有文章，写一篇吧 ✍️
+                    </div>
+                `;
+                return;
             }
 
-            // 保存日记数组
-            function saveEntries(entries) {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-            }
+            let html = '';
+            for (const entry of entries) {
+                const date = entry.created_at ? new Date(entry.created_at) : new Date();
+                const dateStr = date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
 
-            // ---------- 渲染 ----------
-            const diaryListEl = document.getElementById('diaryList');
-            const countDisplay = document.getElementById('countDisplay');
-            const diaryInput = document.getElementById('diaryInput');
-            const saveBtn = document.getElementById('saveBtn');
-            const clearInputBtn = document.getElementById('clearInputBtn');
+                const isEditing = editingId === entry.id;
+                const content = escapeHtml(entry.content || '');
+                const title = escapeHtml(entry.title || '无标题');
+                const category = entry.category ? escapeHtml(entry.category) : '';
 
-            // 生成唯一短 ID (仅用于删除)
-            function generateId() {
-                return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-            }
-
-            // 格式化时间
-            function formatTime(timestamp) {
-                const d = new Date(timestamp);
-                const pad = (n) => String(n).padStart(2, '0');
-                return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-            }
-
-            // 渲染所有日记
-            function render() {
-                const entries = getEntries();
-                // 按时间倒序 (最新的在前)
-                const sorted = [...entries].sort((a, b) => b.timestamp - a.timestamp);
-
-                // 更新计数
-                countDisplay.textContent = `${entries.length} 篇`;
-
-                if (entries.length === 0) {
-                    diaryListEl.innerHTML = `
-                        <div class="empty-state">
-                            <span>📭</span>
-                            还没有日记，写一篇吧 ✍️
-                        </div>
-                    `;
-                    return;
-                }
-
-                let html = '';
-                for (const entry of sorted) {
-                    const safeContent = escapeHtml(entry.content);
-                    const dateStr = formatTime(entry.timestamp);
-                    html += `
-                        <div class="diary-item" data-id="${entry.id}">
-                            <div class="diary-header">
-                                <div class="diary-date">
-                                    ${dateStr}
-                                    <small>· #${entry.id.slice(0,6)}</small>
-                                </div>
-                                <div class="diary-actions">
-                                    <button class="delete-btn" data-id="${entry.id}" title="删除此日记">✕</button>
+                html += `
+                    <div class="diary-item ${isEditing ? 'edit-mode' : ''}" data-id="${entry.id}">
+                        <div class="diary-header">
+                            <div>
+                                <div class="diary-title">${title}</div>
+                                <div class="diary-meta">
+                                    📅 ${dateStr}
+                                    ${category ? `<span class="category-badge">🏷️ ${category}</span>` : ''}
                                 </div>
                             </div>
-                            <div class="diary-content">${safeContent}</div>
+                            <div class="diary-actions">
+                                <button onclick="editEntry(${entry.id})" title="编辑">✎</button>
+                                <button onclick="deleteEntry(${entry.id})" title="删除">✕</button>
+                            </div>
                         </div>
-                    `;
-                }
-
-                diaryListEl.innerHTML = html;
-
-                // 绑定删除事件 (委托)
-                diaryListEl.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        const id = this.getAttribute('data-id');
-                        if (!id) return;
-                        if (confirm('确定要删除这篇日记吗？')) {
-                            deleteEntryById(id);
-                        }
-                    });
-                });
+                        <div class="diary-content">${content}</div>
+                        ${isEditing ? `
+                            <textarea class="edit-textarea" id="edit-${entry.id}">${content}</textarea>
+                            <div class="edit-actions">
+                                <button class="save-edit" onclick="saveEdit(${entry.id})">保存</button>
+                                <button class="cancel-edit" onclick="cancelEdit()">取消</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
             }
 
-            // 简易防 XSS (转义 HTML)
-            function escapeHtml(text) {
-                if (!text) return '';
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
+            diaryList.innerHTML = html;
+        }
+
+        // ---------- 新增文章 ----------
+        async function addEntry(title, content) {
+            if (!content || content.trim() === '') {
+                alert('请写点内容～');
+                return;
             }
 
-            // ---------- 增删改 ----------
-            // 添加新日记
-            function addEntry(content) {
-                if (!content || content.trim() === '') {
-                    alert('写点内容再保存吧 :)');
-                    return false;
-                }
+            saveBtn.disabled = true;
+            saveBtn.textContent = '⏳ 发布中...';
 
-                const entries = getEntries();
-                const newEntry = {
-                    id: generateId(),
-                    content: content.trim(),
-                    timestamp: Date.now(),
-                };
-                entries.push(newEntry);
-                saveEntries(entries);
-                render();
-                return true;
-            }
+            try {
+                const { data, error } = await supabase
+                    .from('articles')
+                    .insert([{
+                        title: title.trim() || '日常随笔',
+                        content: content.trim(),
+                        category: '生活'
+                    }])
+                    .select();
 
-            // 删除日记 (通过 id)
-            function deleteEntryById(id) {
-                let entries = getEntries();
-                const filtered = entries.filter(e => e.id !== id);
-                if (filtered.length === entries.length) {
-                    alert('未找到该日记');
-                    return;
-                }
-                saveEntries(filtered);
-                render();
-            }
+                if (error) throw error;
 
-            // 清空全部 (额外功能, 通过长按或二次确认)
-            function clearAllEntries() {
-                if (getEntries().length === 0) return;
-                if (confirm('⚠️ 确定要删除所有日记吗？此操作不可撤销！')) {
-                    saveEntries([]);
-                    render();
-                }
-            }
-
-            // ---------- 事件绑定 ----------
-            // 保存按钮
-            saveBtn.addEventListener('click', function() {
-                const text = diaryInput.value;
-                const success = addEntry(text);
-                if (success) {
-                    diaryInput.value = ''; // 清空输入框
-                    diaryInput.focus();
-                }
-            });
-
-            // 清空输入框
-            clearInputBtn.addEventListener('click', function() {
                 diaryInput.value = '';
-                diaryInput.focus();
-            });
+                titleInput.value = '';
+                await loadEntries();
+                setStatus(true);
+            } catch (err) {
+                console.error('发布失败:', err);
+                setStatus(false);
+                alert('发布失败: ' + err.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '✧ 发布文章';
+            }
+        }
 
-            // 键盘快捷键: Ctrl+Enter 保存 (或 Cmd+Enter)
-            diaryInput.addEventListener('keydown', function(e) {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                    e.preventDefault();
-                    saveBtn.click();
-                }
-            });
+        // ---------- 删除 ----------
+        window.deleteEntry = async function(id) {
+            if (!confirm('确定删除吗？')) return;
 
-            // 额外: 双击标题清空全部 (隐藏功能, 可不要)
-            // 但为了安全, 我们加一个隐藏入口: 点击计数可清空 (但需要确认)
-            countDisplay.addEventListener('dblclick', function() {
-                clearAllEntries();
-            });
+            try {
+                const { error } = await supabase
+                    .from('articles')
+                    .delete()
+                    .eq('id', id);
 
-            // 如果用户想清空全部, 也可以长按计数 (但容易误触, 所以用双击)
-            // 已实现双击计数清空全部
+                if (error) throw error;
 
-            // ---------- 启动 ----------
-            render();
+                if (editingId === id) editingId = null;
+                await loadEntries();
+            } catch (err) {
+                console.error('删除失败:', err);
+                alert('删除失败: ' + err.message);
+            }
+        };
 
-            // 自动聚焦输入框
-            diaryInput.focus();
+        // ---------- 编辑 ----------
+        window.editEntry = function(id) {
+            editingId = id;
+            renderEntries();
+            setTimeout(() => {
+                const textarea = document.getElementById(`edit-${id}`);
+                if (textarea) textarea.focus();
+            }, 50);
+        };
 
-            // 暴露一点小功能到控制台 (方便调试)
-            window.__diary = {
-                getEntries,
-                saveEntries,
-                addEntry,
-                deleteEntryById,
-                clearAll: clearAllEntries,
-                render,
-            };
+        window.cancelEdit = function() {
+            editingId = null;
+            renderEntries();
+        };
 
-            console.log('📖 ZUMIN 日记已启动！');
-            console.log('💡 提示: Ctrl+Enter 快速保存, 双击「篇数」可清空全部。');
-        })();
+        window.saveEdit = async function(id) {
+            const textarea = document.getElementById(`edit-${id}`);
+            if (!textarea) return;
+
+            const content = textarea.value.trim();
+            if (!content) {
+                alert('内容不能为空');
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('articles')
+                    .update({
+                        content: content,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                editingId = null;
+                await loadEntries();
+            } catch (err) {
+                console.error('更新失败:', err);
+                alert('更新失败: ' + err.message);
+            }
+        };
+
+        // ---------- 事件绑定 ----------
+        saveBtn.addEventListener('click', () => {
+            addEntry(titleInput.value, diaryInput.value);
+        });
+
+        // Ctrl+Enter 快速保存
+        diaryInput.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                saveBtn.click();
+            }
+        });
+
+        // ---------- 启动 ----------
+        loadEntries();
+        diaryInput.focus();
+
+        console.log('📖 ZUMIN 已启动');
+        console.log('🔗 Supabase:', SUPABASE_URL);
     </script>
 
 </body>
