@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZUMIN · 简单日记</title>
+    <title>ZUMIN · 云端日记</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -243,7 +243,7 @@
 
         <h1>📖 ZUMIN</h1>
         <div class="subhead">
-            <span>☁️ 简单日记 · 使用 todos 表</span>
+            <span>☁️ 云端日记 · 随时更新</span>
             <span class="status-badge" id="statusBadge">连接中...</span>
         </div>
 
@@ -262,10 +262,10 @@
 
     <script>
         // ============================================================
-        // ✅ 已配置好，无需修改
+        // ✅ 已配置完成，无需修改
         // ============================================================
         const SUPABASE_URL = 'https://kgmhpsoiqnjszkrknqki.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_JWBaBcQORvM6wsqoA7ivzQ_GhCA3hv1';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s';
         // ============================================================
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -289,7 +289,7 @@
             return div.innerHTML;
         }
 
-        // ---------- 加载数据（使用 todos 表）----------
+        // ---------- 加载数据 ----------
         async function loadEntries() {
             try {
                 const { data, error } = await supabase
@@ -423,7 +423,6 @@
                     .eq('id', id);
 
                 if (error) throw error;
-
                 await loadEntries();
             } catch (err) {
                 console.error('删除失败:', err);
@@ -448,9 +447,8 @@
         loadEntries();
         diaryInput.focus();
 
-        console.log('📖 ZUMIN 简单日记已启动');
-        console.log('🔗 Supabase:', SUPABASE_URL);
-        console.log('📋 使用 todos 表');
+        console.log('📖 ZUMIN 日记已启动！');
+        console.log('🔗 Supabase 已连接');
     </script>
 
 </body>
