@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>健康记录 · ZUMIN</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    max-width:1150px;
+    margin:60px auto;
+    padding:0 24px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+    background:#fafaf8;
+    color:#222;
+}
+
+a{
+    text-decoration:none;
+    color:#777;
+}
+
+h1{
+    font-size:44px;
+    margin:40px 0 10px;
+}
+
+.subtitle{
+    color:#888;
+    margin-bottom:10px;
+}
+
+.status{
+    color:#aaa;
+    font-size:13px;
+    margin-bottom:30px;
+}
+
+.editor{
+    background:white;
+    border:1px solid #ecece8;
+    border-radius:22px;
+    padding:22px;
+    margin-bottom:30px;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+}
+
+.field label{
+    display:block;
+    color:#777;
+    font-size:13px;
+    margin-bottom:6px;
+}
+
+.field input{
+    width:100%;
+    padding:11px;
+    border:1px solid #ddd;
+    border-radius:12px;
+    font-size:15px;
+    background:#fafaf8;
+}
+
+.field input:focus{
+    outline:none;
+    border-color:#999;
+}
+
+.buttons{
+    margin-top:18px;
+    display:flex;
+    justify-content:flex-end;
+}
+
+button{
+    border:none;
+    border-radius:999px;
+    background:#222;
+    color:white;
+    padding:10px 22px;
+    cursor:pointer;
+    font-size:14px;
+}
+
+button:hover{
+    background:#444;
+}
+
+button:disabled{
+    opacity:.5;
+}
+
+.table-box{
+    overflow-x:auto;
+    background:white;
+    border:1px solid #ecece8;
+    border-radius:22px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:1050px;
+}
+
+th,
+td{
+    padding:15px 12px;
+    text-align:center;
+    border-bottom:1px solid #eee;
+}
+
+th{
+    color:#777;
+    font-size:13px;
+    font-weight:500;
+    background:#fafaf8;
+}
+
+td{
+    font-size:14px;
+}
+
+.actions button{
+    padding:5px 10px;
+    font-size:12px;
+    margin:2px;
+    background:#f1f1ed;
+    color:#666;
+}
+
+.actions .delete{
+    color:#b33;
+}
+
+.empty{
+    padding:40px;
+    text-align:center;
+    color:#aaa;
+}
+
+.summary{
+    margin-top:22px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+}
+
+.summary-card{
+    background:white;
+    border:1px solid #ecece8;
+    border-radius:18px;
+    padding:18px;
+}
+
+.summary-label{
+    color:#999;
+    font-size:13px;
+    margin-bottom:6px;
+}
+
+.summary-value{
+    font-size:24px;
+    font-weight:600;
+}
+
+@media(max-width:800px){
+
+    body{
+        margin:30px auto;
+        padding:0 15px;
+    }
+
+    .form-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .summary{
+        grid-template-columns:1fr;
+    }
+
+    h1{
+        font-size:38px;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<a href="index.html">← 返回首页</a>
+
+<h1>健康记录</h1>
+
+<div class="subtitle">
+记录每天的睡眠、饮水、运动和体重。
+</div>
+
+<div id="status" class="status">
+连接中...
+</div>
+
+
+<div class="editor">
+
+<div class="form-grid">
+
+<div class="field">
+<label>日期</label>
+<input type="date" id="date">
+</div>
+
+<div class="field">
+<label>入睡时间（前一天）</label>
+<input type="time" id="sleepTime">
+</div>
+
+<div class="field">
+<label>早起时刻（当日）</label>
+<input type="time" id="wakeTime">
+</div>
+
+<div class="field">
+<label>睡眠时长（时）</label>
+<input type="number" id="sleepHours" step="0.1" min="0" placeholder="例如 7.5">
+</div>
+
+<div class="field">
+<label>喝水量（杯）</label>
+<input type="number" id="waterCups" step="0.5" min="0" placeholder="例如 8">
+</div>
+
+<div class="field">
+<label>运动时间（时）</label>
+<input type="number" id="exerciseHours" step="0.1" min="0" placeholder="例如 1">
+</div>
+
+<div class="field">
+<label>体重（kg）</label>
+<input type="number" id="weightKg" step="0.1" min="0" placeholder="例如 60.5">
+</div>
+
+</div>
+
+
+<div class="buttons">
+
+<button id="saveBtn">
+保存今日记录
+</button>
+
+</div>
+
+</div>
+
+
+<div class="table-box">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>日期</th>
+
+<th>入睡时间</th>
+
+<th>早起时刻</th>
+
+<th>睡眠时长</th>
+
+<th>喝水量</th>
+
+<th>运动时间</th>
+
+<th>体重</th>
+
+<th>操作</th>
+
+</tr>
+
+</thead>
+
+<tbody id="healthBody">
+
+<tr>
+
+<td colspan="8" class="empty">
+加载中...
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+
+<div class="summary">
+
+<div class="summary-card">
+
+<div class="summary-label">
+平均睡眠时长
+</div>
+
+<div class="summary-value" id="avgSleep">
+0.0 h
+</div>
+
+</div>
+
+
+<div class="summary-card">
+
+<div class="summary-label">
+平均饮水量
+</div>
+
+<div class="summary-value" id="avgWater">
+0.0 杯
+</div>
+
+</div>
+
+
+<div class="summary-card">
+
+<div class="summary-label">
+最新体重
+</div>
+
+<div class="summary-value" id="latestWeight">
+--
+</div>
+
+</div>
+
+</div>
+
+
+
+<script>
+
+const SUPABASE_URL =
+"https://kgmhpsoiqnjszkrknqki.supabase.co";
+
+const SUPABASE_ANON_KEY =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s";
+
+const sbClient =
+window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+
+const dateInput =
+document.getElementById("date");
+
+const sleepTimeInput =
+document.getElementById("sleepTime");
+
+const wakeTimeInput =
+document.getElementById("wakeTime");
+
+const sleepHoursInput =
+document.getElementById("sleepHours");
+
+const waterCupsInput =
+document.getElementById("waterCups");
+
+const exerciseHoursInput =
+document.getElementById("exerciseHours");
+
+const weightKgInput =
+document.getElementById("weightKg");
+
+const saveBtn =
+document.getElementById("saveBtn");
+
+const healthBody =
+document.getElementById("healthBody");
+
+const statusText =
+document.getElementById("status");
+
+const avgSleep =
+document.getElementById("avgSleep");
+
+const avgWater =
+document.getElementById("avgWater");
+
+const latestWeight =
+document.getElementById("latestWeight");
+
+let records = [];
+
+
+function getLocalDateString(){
+
+    const now =
+    new Date();
+
+    const year =
+    now.getFullYear();
+
+    const month =
+    String(
+        now.getMonth() + 1
+    ).padStart(2,"0");
+
+    const day =
+    String(
+        now.getDate()
+    ).padStart(2,"0");
+
+    return `${year}-${month}-${day}`;
+}
+
+
+dateInput.value =
+getLocalDateString();
+
+
+function numberOrNull(input){
+
+    if(
+        input.value === ""
+    )
+        return null;
+
+    const value =
+    Number(input.value);
+
+    return Number.isFinite(value)
+        ? value
+        : null;
+}
+
+
+function formatNumber(value,digits=1){
+
+    if(
+        value === null ||
+        value === undefined
+    )
+        return "--";
+
+    return Number(value)
+    .toFixed(digits);
+}
+
+
+async function loadHealth(){
+
+    try{
+
+        const {
+            data,
+            error
+        } =
+        await sbClient
+        .from("health_records")
+        .select("*")
+        .order(
+            "date",
+            {
+                ascending:false
+            }
+        );
+
+        if(error)
+            throw error;
+
+        records =
+        data || [];
+
+        statusText.textContent =
+        "✅ 已连接";
+
+        renderHealth();
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        statusText.textContent =
+        "❌ 连接失败";
+
+        healthBody.innerHTML =
+        `
+        <tr>
+        <td colspan="8" class="empty">
+        ${error.message}
+        </td>
+        </tr>
+        `;
+
+    }
+
+}
+
+
+async function saveHealth(){
+
+    if(
+        !dateInput.value
+    ){
+
+        alert(
+            "请选择日期"
+        );
+
+        return;
+    }
+
+
+    const record = {
+
+        date:
+        dateInput.value,
+
+        sleep_time:
+        sleepTimeInput.value || null,
+
+        wake_time:
+        wakeTimeInput.value || null,
+
+        sleep_hours:
+        numberOrNull(
+            sleepHoursInput
+        ),
+
+        water_cups:
+        numberOrNull(
+            waterCupsInput
+        ),
+
+        exercise_hours:
+        numberOrNull(
+            exerciseHoursInput
+        ),
+
+        weight_kg:
+        numberOrNull(
+            weightKgInput
+        ),
+
+        updated_at:
+        new Date()
+        .toISOString()
+
+    };
+
+
+    saveBtn.disabled =
+    true;
+
+    saveBtn.textContent =
+    "保存中...";
+
+
+    try{
+
+        const {
+            error
+        } =
+        await sbClient
+        .from("health_records")
+        .upsert(
+            record,
+            {
+                onConflict:"date"
+            }
+        );
+
+        if(error)
+            throw error;
+
+        clearForm();
+
+        dateInput.value =
+        getLocalDateString();
+
+        await loadHealth();
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "保存失败：\n"
+            +
+            error.message
+        );
+
+    }
+
+    finally{
+
+        saveBtn.disabled =
+        false;
+
+        saveBtn.textContent =
+        "保存今日记录";
+
+    }
+
+}
+
+
+function clearForm(){
+
+    sleepTimeInput.value = "";
+    wakeTimeInput.value = "";
+    sleepHoursInput.value = "";
+    waterCupsInput.value = "";
+    exerciseHoursInput.value = "";
+    weightKgInput.value = "";
+
+}
+
+
+function renderHealth(){
+
+    if(
+        records.length === 0
+    ){
+
+        healthBody.innerHTML =
+        `
+        <tr>
+        <td colspan="8" class="empty">
+        还没有健康记录。
+        </td>
+        </tr>
+        `;
+
+        avgSleep.textContent =
+        "0.0 h";
+
+        avgWater.textContent =
+        "0.0 杯";
+
+        latestWeight.textContent =
+        "--";
+
+        return;
+    }
+
+
+    let html = "";
+
+
+    for(
+        const item
+        of records
+    ){
+
+        html +=
+        `
+        <tr>
+
+        <td>
+        ${item.date}
+        </td>
+
+        <td>
+        ${item.sleep_time
+            ? item.sleep_time.slice(0,5)
+            : "--"}
+        </td>
+
+        <td>
+        ${item.wake_time
+            ? item.wake_time.slice(0,5)
+            : "--"}
+        </td>
+
+        <td>
+        ${item.sleep_hours !== null
+            ? formatNumber(item.sleep_hours) + " h"
+            : "--"}
+        </td>
+
+        <td>
+        ${item.water_cups !== null
+            ? formatNumber(item.water_cups) + " 杯"
+            : "--"}
+        </td>
+
+        <td>
+        ${item.exercise_hours !== null
+            ? formatNumber(item.exercise_hours) + " h"
+            : "--"}
+        </td>
+
+        <td>
+        ${item.weight_kg !== null
+            ? formatNumber(item.weight_kg) + " kg"
+            : "--"}
+        </td>
+
+        <td class="actions">
+
+        <button
+        onclick="editRecord(${item.id})">
+        编辑
+        </button>
+
+        <button
+        class="delete"
+        onclick="deleteRecord(${item.id})">
+        删除
+        </button>
+
+        </td>
+
+        </tr>
+        `;
+
+    }
+
+
+    healthBody.innerHTML =
+    html;
+
+
+    const sleepValues =
+    records
+    .filter(
+        item =>
+        item.sleep_hours !== null
+    )
+    .map(
+        item =>
+        Number(item.sleep_hours)
+    );
+
+
+    const waterValues =
+    records
+    .filter(
+        item =>
+        item.water_cups !== null
+    )
+    .map(
+        item =>
+        Number(item.water_cups)
+    );
+
+
+    if(
+        sleepValues.length
+    ){
+
+        const average =
+
+        sleepValues.reduce(
+            (a,b)=>a+b,
+            0
+        )
+        /
+        sleepValues.length;
+
+        avgSleep.textContent =
+        average.toFixed(1)
+        +
+        " h";
+
+    }
+
+
+    if(
+        waterValues.length
+    ){
+
+        const average =
+
+        waterValues.reduce(
+            (a,b)=>a+b,
+            0
+        )
+        /
+        waterValues.length;
+
+        avgWater.textContent =
+        average.toFixed(1)
+        +
+        " 杯";
+
+    }
+
+
+    const weightRecord =
+    records.find(
+        item =>
+        item.weight_kg !== null
+    );
+
+
+    latestWeight.textContent =
+
+    weightRecord
+
+    ?
+
+    Number(
+        weightRecord.weight_kg
+    ).toFixed(1)
+    +
+    " kg"
+
+    :
+
+    "--";
+
+}
+
+
+window.editRecord =
+function(id){
+
+    const item =
+    records.find(
+        record =>
+        record.id === id
+    );
+
+    if(!item)
+        return;
+
+
+    dateInput.value =
+    item.date;
+
+    sleepTimeInput.value =
+    item.sleep_time
+    ?
+    item.sleep_time.slice(0,5)
+    :
+    "";
+
+    wakeTimeInput.value =
+    item.wake_time
+    ?
+    item.wake_time.slice(0,5)
+    :
+    "";
+
+    sleepHoursInput.value =
+    item.sleep_hours ?? "";
+
+    waterCupsInput.value =
+    item.water_cups ?? "";
+
+    exerciseHoursInput.value =
+    item.exercise_hours ?? "";
+
+    weightKgInput.value =
+    item.weight_kg ?? "";
+
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+
+};
+
+
+window.deleteRecord =
+async function(id){
+
+    if(
+        !confirm(
+            "确定删除这一天的健康记录吗？"
+        )
+    )
+        return;
+
+
+    try{
+
+        const {
+            error
+        } =
+        await sbClient
+        .from("health_records")
+        .delete()
+        .eq(
+            "id",
+            id
+        );
+
+        if(error)
+            throw error;
+
+        await loadHealth();
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "删除失败：\n"
+            +
+            error.message
+        );
+
+    }
+
+};
+
+
+saveBtn.addEventListener(
+    "click",
+    saveHealth
+);
+
+
+loadHealth();
+
+</script>
+
+</body>
+
+</html>
