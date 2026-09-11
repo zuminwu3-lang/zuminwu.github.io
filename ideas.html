@@ -3,9 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>设想 · ZUMIN</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
 body{
     max-width:800px;
     margin:60px auto;
@@ -22,15 +31,59 @@ a{
 
 h1{
     font-size:44px;
-    margin:40px 0 10px;
+    margin:40px 0 8px;
 }
 
 .subtitle{
     color:#888;
-    margin-bottom:40px;
+    margin-bottom:32px;
 }
 
-.item{
+.editor{
+    background:white;
+    border:1px solid #ecece8;
+    border-radius:24px;
+    padding:24px;
+    margin-bottom:32px;
+}
+
+input,
+textarea{
+    width:100%;
+    border:1px solid #ddd;
+    border-radius:16px;
+    padding:14px 16px;
+    font-family:inherit;
+    font-size:16px;
+    background:#fcfcfa;
+}
+
+input{
+    margin-bottom:14px;
+}
+
+textarea{
+    min-height:150px;
+    resize:vertical;
+    line-height:1.7;
+}
+
+button{
+    margin-top:14px;
+    padding:10px 24px;
+    border:none;
+    border-radius:999px;
+    background:#222;
+    color:white;
+    cursor:pointer;
+    font-size:15px;
+}
+
+button:hover{
+    background:#444;
+}
+
+.idea{
     background:white;
     border:1px solid #ecece8;
     border-radius:22px;
@@ -38,18 +91,56 @@ h1{
     margin-bottom:18px;
 }
 
-.item h2{
+.idea h2{
     margin-bottom:12px;
+    font-size:24px;
 }
 
-.item p{
+.idea-content{
     line-height:1.8;
+    white-space:pre-wrap;
+    word-break:break-word;
+}
+
+.idea-footer{
+    margin-top:18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
 }
 
 .date{
-    margin-top:20px;
     color:#aaa;
     font-size:13px;
+}
+
+.actions button{
+    margin:0 0 0 8px;
+    padding:6px 14px;
+    font-size:13px;
+    background:#f3f3ef;
+    color:#555;
+}
+
+.actions button:hover{
+    background:#e8e8e2;
+}
+
+.delete{
+    color:#b33 !important;
+}
+
+.empty{
+    color:#aaa;
+    text-align:center;
+    padding:30px;
+}
+
+.status{
+    font-size:13px;
+    color:#888;
+    margin-bottom:16px;
 }
 </style>
 </head>
@@ -61,23 +152,408 @@ h1{
 <h1>设想</h1>
 
 <div class="subtitle">
-这里存放一些尚未发生的事情。
+这里存放一些天马行空的想象。
 </div>
 
-<div class="item">
-
-<h2>如果记忆可以被保存</h2>
-
-<p>
-也许有一天，人可以把某个时刻完整保存下来。
-不是照片，而是当时看到的、听到的、想到的东西。
-</p>
-
-<div class="date">
-2026
+<div class="status" id="status">
+连接中...
 </div>
 
+<div class="editor">
+
+    <input
+        id="titleInput"
+        type="text"
+        placeholder="标题，例如：如果记忆可以被保存"
+    >
+
+    <textarea
+        id="contentInput"
+        placeholder="写下你的设想……"
+    ></textarea>
+
+    <button id="publishBtn">
+        发布设想
+    </button>
+
 </div>
+
+<div id="ideaList">
+    <div class="empty">
+        加载中...
+    </div>
+</div>
+
+
+<script>
+
+const SUPABASE_URL =
+    "https://kgmhpsoiqnjszkrknqki.supabase.co";
+
+const SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s";
+
+const sbClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+    );
+
+const titleInput =
+    document.getElementById("titleInput");
+
+const contentInput =
+    document.getElementById("contentInput");
+
+const publishBtn =
+    document.getElementById("publishBtn");
+
+const ideaList =
+    document.getElementById("ideaList");
+
+const statusText =
+    document.getElementById("status");
+
+let ideas = [];
+
+
+function escapeHtml(text){
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        text || "";
+
+    return div.innerHTML;
+}
+
+
+async function loadIdeas(){
+
+    try{
+
+        const {
+            data,
+            error
+        } =
+        await sbClient
+            .from("ideas")
+            .select("*")
+            .order(
+                "id",
+                {
+                    ascending:false
+                }
+            );
+
+        if(error)
+            throw error;
+
+        ideas =
+            data || [];
+
+        statusText.textContent =
+            "✅ 已连接";
+
+        renderIdeas();
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        statusText.textContent =
+            "❌ 连接失败";
+
+        ideaList.innerHTML =
+        `
+        <div class="empty">
+            加载失败：
+            ${escapeHtml(error.message)}
+        </div>
+        `;
+    }
+}
+
+
+function renderIdeas(){
+
+    if(ideas.length === 0){
+
+        ideaList.innerHTML =
+        `
+        <div class="empty">
+            还没有设想。
+        </div>
+        `;
+
+        return;
+    }
+
+    let html = "";
+
+    for(const idea of ideas){
+
+        const date =
+            idea.created_at
+            ? new Date(idea.created_at)
+            : new Date();
+
+        const dateText =
+            date.toLocaleString(
+                "zh-CN",
+                {
+                    year:"numeric",
+                    month:"2-digit",
+                    day:"2-digit",
+                    hour:"2-digit",
+                    minute:"2-digit"
+                }
+            );
+
+        html +=
+        `
+        <div class="idea">
+
+            <h2>
+                ${escapeHtml(idea.title)}
+            </h2>
+
+            <div class="idea-content">
+                ${escapeHtml(idea.content)}
+            </div>
+
+            <div class="idea-footer">
+
+                <div class="date">
+                    ${dateText}
+                </div>
+
+                <div class="actions">
+
+                    <button
+                        onclick="editIdea(${idea.id})">
+
+                        编辑
+
+                    </button>
+
+                    <button
+                        class="delete"
+                        onclick="deleteIdea(${idea.id})">
+
+                        删除
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+        `;
+    }
+
+    ideaList.innerHTML =
+        html;
+}
+
+
+async function addIdea(){
+
+    const title =
+        titleInput.value.trim();
+
+    const content =
+        contentInput.value.trim();
+
+    if(!title){
+
+        alert("请输入标题");
+
+        return;
+    }
+
+    if(!content){
+
+        alert("请输入内容");
+
+        return;
+    }
+
+    publishBtn.disabled =
+        true;
+
+    publishBtn.textContent =
+        "保存中...";
+
+    try{
+
+        const {
+            error
+        } =
+        await sbClient
+            .from("ideas")
+            .insert([
+                {
+                    title:title,
+                    content:content
+                }
+            ]);
+
+        if(error)
+            throw error;
+
+        titleInput.value = "";
+        contentInput.value = "";
+
+        await loadIdeas();
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "发布失败：\n" +
+            error.message
+        );
+    }
+    finally{
+
+        publishBtn.disabled =
+            false;
+
+        publishBtn.textContent =
+            "发布设想";
+    }
+}
+
+
+window.editIdea =
+async function(id){
+
+    const idea =
+        ideas.find(
+            item =>
+                item.id === id
+        );
+
+    if(!idea)
+        return;
+
+    const newTitle =
+        prompt(
+            "修改标题：",
+            idea.title
+        );
+
+    if(newTitle === null)
+        return;
+
+    const newContent =
+        prompt(
+            "修改内容：",
+            idea.content
+        );
+
+    if(newContent === null)
+        return;
+
+    if(!newTitle.trim() ||
+       !newContent.trim()){
+
+        alert("标题和内容不能为空");
+
+        return;
+    }
+
+    try{
+
+        const {
+            error
+        } =
+        await sbClient
+            .from("ideas")
+            .update({
+                title:newTitle.trim(),
+                content:newContent.trim()
+            })
+            .eq(
+                "id",
+                id
+            );
+
+        if(error)
+            throw error;
+
+        await loadIdeas();
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "修改失败：\n" +
+            error.message
+        );
+    }
+};
+
+
+window.deleteIdea =
+async function(id){
+
+    const ok =
+        confirm(
+            "确定删除这个设想吗？"
+        );
+
+    if(!ok)
+        return;
+
+    try{
+
+        const {
+            error
+        } =
+        await sbClient
+            .from("ideas")
+            .delete()
+            .eq(
+                "id",
+                id
+            );
+
+        if(error)
+            throw error;
+
+        await loadIdeas();
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "删除失败：\n" +
+            error.message
+        );
+    }
+};
+
+
+publishBtn.addEventListener(
+    "click",
+    addIdea
+);
+
+
+loadIdeas();
+
+</script>
 
 </body>
 </html>
