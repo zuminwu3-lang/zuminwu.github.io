@@ -367,7 +367,7 @@ footer{
 <img
     id="siteAvatar"
     class="avatar"
-    alt="ZUMIN"
+    alt=""
 >
 
 <div class="avatar-overlay">
@@ -667,6 +667,20 @@ document.getElementById(
 );
 
 
+siteAvatar.addEventListener(
+    "error",
+    () => {
+
+        console.warn(
+            "头像图片加载失败，使用默认头像"
+        );
+
+        setDefaultAvatar();
+
+    }
+);
+
+
 
 /* 默认头像 */
 
@@ -714,39 +728,68 @@ async function loadSiteAvatar(){
 
     setDefaultAvatar();
 
-
     try{
 
         const {
             data,
             error
         } =
-
         await sbClient
-
         .from("site_settings")
-
         .select("value")
-
         .eq(
             "key",
             "site_avatar"
         )
-
         .maybeSingle();
-
 
         if(error)
             throw error;
-
 
         if(
             data &&
             data.value
         ){
 
+            let imageUrl = data.value;
+
+            /* 新版本保存的是 Storage 文件路径；
+               旧版本如果保存的是完整 URL，也继续兼容。 */
+            if(
+                !/^https?:\/\//i.test(
+                    imageUrl
+                )
+            ){
+
+                const {
+                    data:urlData
+                } =
+                sbClient
+                .storage
+                .from("moments")
+                .getPublicUrl(
+                    imageUrl
+                );
+
+                imageUrl =
+                urlData.publicUrl;
+
+            }
+
+            /* 防止浏览器缓存旧头像 */
+            const separator =
+                imageUrl.includes("?")
+                ? "&"
+                : "?";
+
             siteAvatar.src =
-            data.value;
+                imageUrl
+                +
+                separator
+                +
+                "v="
+                +
+                Date.now();
 
         }
 
@@ -758,7 +801,6 @@ async function loadSiteAvatar(){
             "头像读取失败：",
             error
         );
-
 
         avatarStatus.textContent =
         "头像暂时无法读取";
@@ -787,7 +829,6 @@ async () => {
         return;
 
 
-
     if(
         !file.type.startsWith(
             "image/"
@@ -802,9 +843,6 @@ async () => {
     }
 
 
-
-    /* 限制头像大小 5MB */
-
     if(
         file.size >
         5 * 1024 * 1024
@@ -818,33 +856,34 @@ async () => {
     }
 
 
-
     avatarStatus.textContent =
     "正在上传...";
 
 
+    /* 选择后先本地预览，不用等待网络 */
+    const localPreviewUrl =
+    URL.createObjectURL(
+        file
+    );
+
+    siteAvatar.src =
+    localPreviewUrl;
+
 
     try{
 
-
         const extension =
-
         file.name.includes(".")
-
         ?
-
         file.name
         .split(".")
         .pop()
-
+        .toLowerCase()
         :
-
-        "jpg";
-
+        "png";
 
 
         const filePath =
-
         "profile/site-avatar-"
         +
         Date.now()
@@ -854,20 +893,13 @@ async () => {
         extension;
 
 
-
-        /* 上传到 moments bucket */
-
         const {
             error:
             uploadError
         } =
-
         await sbClient
-
         .storage
-
         .from("moments")
-
         .upload(
             filePath,
             file,
@@ -880,46 +912,17 @@ async () => {
         );
 
 
-
         if(uploadError)
             throw uploadError;
 
 
-
-        /* 获取公开地址 */
-
-        const {
-            data:urlData
-        } =
-
-        sbClient
-
-        .storage
-
-        .from("moments")
-
-        .getPublicUrl(
-            filePath
-        );
-
-
-
-        const imageUrl =
-        urlData.publicUrl;
-
-
-
-        /* 保存头像地址 */
-
+        /* 数据库只保存 Storage 路径，不再保存完整网址 */
         const {
             error:
             settingError
         } =
-
         await sbClient
-
         .from("site_settings")
-
         .upsert(
             {
 
@@ -927,7 +930,7 @@ async () => {
                 "site_avatar",
 
                 value:
-                imageUrl,
+                filePath,
 
                 updated_at:
                 new Date()
@@ -944,19 +947,32 @@ async () => {
         );
 
 
-
         if(settingError)
             throw settingError;
 
 
+        /* 上传完成后重新从 Storage 生成正确公开地址 */
+        const {
+            data:urlData
+        } =
+        sbClient
+        .storage
+        .from("moments")
+        .getPublicUrl(
+            filePath
+        );
+
 
         siteAvatar.src =
-        imageUrl;
+        urlData.publicUrl
+        +
+        "?v="
+        +
+        Date.now();
 
 
         avatarStatus.textContent =
         "✓ 图标已更新";
-
 
 
         setTimeout(
@@ -974,28 +990,35 @@ async () => {
 
     catch(error){
 
-
         console.error(
             error
         );
 
-
         avatarStatus.textContent =
         "";
 
-
         alert(
-            "图标上传失败：\n"
+            "图标上传失败：
+"
             +
             error.message
         );
 
+        /* 上传失败时恢复服务器里原来的头像 */
+        await loadSiteAvatar();
+
     }
 
+    finally{
 
+        URL.revokeObjectURL(
+            localPreviewUrl
+        );
 
-    avatarInput.value =
-    "";
+        avatarInput.value =
+        "";
+
+    }
 
 });
 
