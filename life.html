@@ -1,11 +1,22 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>日常 · ZUMIN</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
+
+*{
+    box-sizing:border-box;
+}
+
 body{
     max-width:1000px;
     margin:60px auto;
@@ -27,12 +38,87 @@ h1{
 
 .subtitle{
     color:#888;
+    margin-bottom:15px;
+}
+
+.status{
+    color:#999;
+    font-size:13px;
+    margin-bottom:30px;
+}
+
+.editor{
+    background:white;
+    border:1px solid #ecece8;
+    border-radius:24px;
+    padding:24px;
     margin-bottom:40px;
+}
+
+textarea{
+    width:100%;
+    min-height:120px;
+    padding:15px;
+    border:1px solid #ddd;
+    border-radius:16px;
+    font-family:inherit;
+    font-size:16px;
+    resize:vertical;
+}
+
+textarea:focus{
+    outline:none;
+    border-color:#999;
+}
+
+.file-area{
+    margin-top:16px;
+    padding:18px;
+    border:1px dashed #ccc;
+    border-radius:16px;
+    background:#fafaf8;
+}
+
+.file-tip{
+    margin-top:8px;
+    color:#999;
+    font-size:13px;
+}
+
+.selected-files{
+    margin-top:10px;
+    font-size:14px;
+    color:#666;
+}
+
+.publish-row{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:16px;
+}
+
+button{
+    border:none;
+    border-radius:999px;
+    padding:10px 24px;
+    background:#222;
+    color:white;
+    cursor:pointer;
+    font-size:15px;
+}
+
+button:hover{
+    background:#444;
+}
+
+button:disabled{
+    opacity:.5;
+    cursor:not-allowed;
 }
 
 .grid{
     display:grid;
-    grid-template-columns:repeat(3,1fr);
+    grid-template-columns:repeat(2,1fr);
     gap:18px;
 }
 
@@ -43,32 +129,95 @@ h1{
     border:1px solid #ecece8;
 }
 
-.image{
-    height:220px;
-    background:#eee;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color:#aaa;
+.card img{
+    width:100%;
+    display:block;
+    max-height:500px;
+    object-fit:cover;
 }
 
 .content{
     padding:18px;
+    line-height:1.8;
+    white-space:pre-wrap;
+    word-break:break-word;
+}
+
+.file-card{
+    padding:18px;
+    background:#f5f5f2;
+    margin:18px;
+    border-radius:16px;
+}
+
+.file-name{
+    margin-bottom:10px;
+    word-break:break-all;
+}
+
+.file-link{
+    display:inline-block;
+    background:#222;
+    color:white;
+    padding:7px 14px;
+    border-radius:999px;
+    font-size:13px;
+}
+
+.footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:0 18px 18px;
 }
 
 .date{
     color:#aaa;
     font-size:13px;
-    margin-top:10px;
+}
+
+.actions{
+    display:flex;
+    gap:6px;
+}
+
+.actions button{
+    padding:6px 12px;
+    font-size:13px;
+    background:#f2f2ee;
+    color:#666;
+}
+
+.actions button:hover{
+    background:#e5e5df;
+}
+
+.actions .delete{
+    color:#b33;
+}
+
+.empty{
+    grid-column:1 / -1;
+    text-align:center;
+    color:#aaa;
+    padding:40px;
+    border:1px dashed #ddd;
+    border-radius:20px;
 }
 
 @media(max-width:800px){
+
     .grid{
         grid-template-columns:1fr;
     }
+
 }
+
 </style>
+
 </head>
+
 
 <body>
 
@@ -82,25 +231,702 @@ h1{
 一些生活的碎片。
 </div>
 
-<div class="grid">
-
-<div class="card">
-
-<div class="image">
-图片
+<div id="status" class="status">
+连接中...
 </div>
 
-<div class="content">
-今天的一点记录
 
-<div class="date">
-2026
+<div class="editor">
+
+<textarea
+    id="contentInput"
+    placeholder="写点什么……">
+</textarea>
+
+
+<div class="file-area">
+
+<input
+    type="file"
+    id="fileInput"
+    multiple
+>
+
+<div class="file-tip">
+可以上传图片、PDF、Word、TXT、ZIP 等文件
 </div>
+
+<div
+    id="selectedFiles"
+    class="selected-files">
 </div>
 
 </div>
 
+
+<div class="publish-row">
+
+<button id="publishBtn">
+＋ 发布日常
+</button>
+
 </div>
+
+</div>
+
+
+<div
+    id="momentList"
+    class="grid">
+
+<div class="empty">
+加载中...
+</div>
+
+</div>
+
+
+<script>
+
+const SUPABASE_URL =
+"https://kgmhpsoiqnjszkrknqki.supabase.co";
+
+const SUPABASE_ANON_KEY =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s";
+
+const sbClient =
+window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+const contentInput =
+document.getElementById("contentInput");
+
+const fileInput =
+document.getElementById("fileInput");
+
+const selectedFiles =
+document.getElementById("selectedFiles");
+
+const publishBtn =
+document.getElementById("publishBtn");
+
+const momentList =
+document.getElementById("momentList");
+
+const statusText =
+document.getElementById("status");
+
+let moments = [];
+
+
+function escapeHtml(text){
+
+    const div =
+    document.createElement("div");
+
+    div.textContent =
+    text || "";
+
+    return div.innerHTML;
+}
+
+
+fileInput.addEventListener(
+"change",
+() => {
+
+    const files =
+    Array.from(fileInput.files);
+
+    if(files.length === 0){
+
+        selectedFiles.innerHTML = "";
+
+        return;
+
+    }
+
+    selectedFiles.innerHTML =
+    files
+    .map(
+        file =>
+        "📎 " +
+        escapeHtml(file.name)
+    )
+    .join("<br>");
+
+}
+);
+
+
+function isImage(type){
+
+    return type &&
+           type.startsWith("image/");
+
+}
+
+
+async function loadMoments(){
+
+    try{
+
+        const {
+            data,
+            error
+        } =
+        await sbClient
+        .from("moments")
+        .select("*")
+        .order(
+            "id",
+            {
+                ascending:false
+            }
+        );
+
+        if(error)
+            throw error;
+
+        moments =
+        data || [];
+
+        statusText.textContent =
+        "✅ 已连接";
+
+        renderMoments();
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        statusText.textContent =
+        "❌ 连接失败";
+
+        momentList.innerHTML =
+        `
+        <div class="empty">
+        加载失败
+        <br><br>
+        ${escapeHtml(error.message)}
+        </div>
+        `;
+
+    }
+
+}
+
+
+function renderMoments(){
+
+    if(moments.length === 0){
+
+        momentList.innerHTML =
+        `
+        <div class="empty">
+        📷
+        <br><br>
+        还没有日常。
+        </div>
+        `;
+
+        return;
+
+    }
+
+
+    let html = "";
+
+
+    for(const moment of moments){
+
+        const date =
+        moment.created_at
+        ?
+        new Date(moment.created_at)
+        :
+        new Date();
+
+        const dateText =
+        date.toLocaleString(
+            "zh-CN",
+            {
+                year:"numeric",
+                month:"2-digit",
+                day:"2-digit",
+                hour:"2-digit",
+                minute:"2-digit"
+            }
+        );
+
+
+        let fileHtml = "";
+
+
+        if(moment.file_url){
+
+            if(isImage(moment.file_type)){
+
+                fileHtml =
+                `
+                <img
+                    src="${escapeHtml(moment.file_url)}"
+                    alt=""
+                >
+                `;
+
+            }
+
+            else{
+
+                fileHtml =
+                `
+                <div class="file-card">
+
+                    <div class="file-name">
+                    📎 ${escapeHtml(
+                        moment.file_name || "文件"
+                    )}
+                    </div>
+
+                    <a
+                        class="file-link"
+                        href="${escapeHtml(moment.file_url)}"
+                        target="_blank">
+
+                        打开 / 下载
+
+                    </a>
+
+                </div>
+                `;
+
+            }
+
+        }
+
+
+        html +=
+        `
+        <div class="card">
+
+            ${fileHtml}
+
+            ${
+                moment.content
+                ?
+                `
+                <div class="content">
+                ${escapeHtml(moment.content)}
+                </div>
+                `
+                :
+                ""
+            }
+
+            <div class="footer">
+
+                <div class="date">
+                ${dateText}
+                </div>
+
+                <div class="actions">
+
+                    <button
+                    onclick="editMoment(${moment.id})">
+                    编辑
+                    </button>
+
+                    <button
+                    class="delete"
+                    onclick="deleteMoment(${moment.id})">
+                    删除
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+        `;
+
+    }
+
+
+    momentList.innerHTML =
+    html;
+
+}
+
+
+async function uploadFile(file){
+
+    const extension =
+    file.name.includes(".")
+    ?
+    "." + file.name.split(".").pop()
+    :
+    "";
+
+
+    const filePath =
+    Date.now()
+    +
+    "-"
+    +
+    crypto.randomUUID()
+    +
+    extension;
+
+
+    const {
+        error
+    } =
+    await sbClient
+    .storage
+    .from("moments")
+    .upload(
+        filePath,
+        file,
+        {
+            cacheControl:"3600",
+            upsert:false
+        }
+    );
+
+
+    if(error)
+        throw error;
+
+
+    const {
+        data
+    } =
+    sbClient
+    .storage
+    .from("moments")
+    .getPublicUrl(
+        filePath
+    );
+
+
+    return {
+
+        url:data.publicUrl,
+
+        path:filePath
+
+    };
+
+}
+
+
+async function publishMoment(){
+
+    const content =
+    contentInput.value.trim();
+
+    const files =
+    Array.from(fileInput.files);
+
+
+    if(
+        !content &&
+        files.length === 0
+    ){
+
+        alert(
+            "请输入文字或选择文件"
+        );
+
+        return;
+
+    }
+
+
+    publishBtn.disabled =
+    true;
+
+    publishBtn.textContent =
+    "上传中...";
+
+
+    try{
+
+
+        if(files.length === 0){
+
+            const {
+                error
+            } =
+            await sbClient
+            .from("moments")
+            .insert([
+                {
+                    content:content
+                }
+            ]);
+
+
+            if(error)
+                throw error;
+
+        }
+
+        else{
+
+
+            for(
+                let i = 0;
+                i < files.length;
+                i++
+            ){
+
+                const file =
+                files[i];
+
+
+                publishBtn.textContent =
+                `上传中 ${i + 1}/${files.length}`;
+
+
+                const uploaded =
+                await uploadFile(file);
+
+
+                const {
+                    error
+                } =
+                await sbClient
+                .from("moments")
+                .insert([
+                    {
+
+                        content:
+                        i === 0
+                        ?
+                        content
+                        :
+                        "",
+
+                        file_url:
+                        uploaded.url,
+
+                        file_path:
+                        uploaded.path,
+
+                        file_name:
+                        file.name,
+
+                        file_type:
+                        file.type
+
+                    }
+                ]);
+
+
+                if(error)
+                    throw error;
+
+            }
+
+        }
+
+
+        contentInput.value = "";
+
+        fileInput.value = "";
+
+        selectedFiles.innerHTML = "";
+
+
+        await loadMoments();
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "发布失败：\n"
+            +
+            error.message
+        );
+
+    }
+
+    finally{
+
+        publishBtn.disabled =
+        false;
+
+        publishBtn.textContent =
+        "＋ 发布日常";
+
+    }
+
+}
+
+
+window.editMoment =
+async function(id){
+
+    const moment =
+    moments.find(
+        item =>
+        item.id === id
+    );
+
+
+    if(!moment)
+        return;
+
+
+    const newContent =
+    prompt(
+        "修改内容：",
+        moment.content || ""
+    );
+
+
+    if(newContent === null)
+        return;
+
+
+    try{
+
+        const {
+            error
+        } =
+        await sbClient
+        .from("moments")
+        .update({
+            content:
+            newContent.trim()
+        })
+        .eq(
+            "id",
+            id
+        );
+
+
+        if(error)
+            throw error;
+
+
+        await loadMoments();
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "修改失败：\n"
+            +
+            error.message
+        );
+
+    }
+
+};
+
+
+window.deleteMoment =
+async function(id){
+
+    const moment =
+    moments.find(
+        item =>
+        item.id === id
+    );
+
+
+    if(!moment)
+        return;
+
+
+    if(
+        !confirm(
+            "确定删除这条日常吗？"
+        )
+    )
+        return;
+
+
+    try{
+
+
+        if(moment.file_path){
+
+            const {
+                error
+            } =
+            await sbClient
+            .storage
+            .from("moments")
+            .remove([
+                moment.file_path
+            ]);
+
+
+            if(error)
+                throw error;
+
+        }
+
+
+        const {
+            error
+        } =
+        await sbClient
+        .from("moments")
+        .delete()
+        .eq(
+            "id",
+            id
+        );
+
+
+        if(error)
+            throw error;
+
+
+        await loadMoments();
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "删除失败：\n"
+            +
+            error.message
+        );
+
+    }
+
+};
+
+
+publishBtn.addEventListener(
+    "click",
+    publishMoment
+);
+
+
+loadMoments();
+
+</script>
 
 </body>
+
 </html>
