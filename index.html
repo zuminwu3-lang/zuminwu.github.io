@@ -1,610 +1,312 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>ZUMIN</title>
-
-
-
 <style>
-
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-}
-
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
 body{
-
-    max-width:1000px;
-
-    margin:0 auto;
-
-    padding:70px 24px;
-
-    font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        "Microsoft YaHei",
-        sans-serif;
-
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
     background:#fafaf8;
-
-    color:#222;
+    color:#161616;
+    overflow-x:hidden;
 }
-
-
-/* =========================
-   顶部
-========================= */
-
+a{text-decoration:none;color:inherit}
 .hero{
-
-    text-align:center;
-
-    margin-bottom:60px;
-}
-
-
-.avatar-box{
-
-    display:flex;
-
-    justify-content:center;
-
-    margin-bottom:24px;
-}
-
-
-.avatar-label{
-
-    cursor:pointer;
-}
-
-
-.avatar-wrapper{
-
-    width:130px;
-
-    height:130px;
-
-    border-radius:50%;
-
+    min-height:100vh;
     position:relative;
-
-    overflow:hidden;
-
-    background:#eeeeea;
-
-    box-shadow:
-        0 8px 30px
-        rgba(0,0,0,.08);
-}
-
-
-.avatar{
-
-    width:100%;
-
-    height:100%;
-
-    object-fit:cover;
-
-    display:block;
-}
-
-
-.avatar-overlay{
-
-    position:absolute;
-
-    inset:0;
-
     display:flex;
-
     align-items:center;
-
     justify-content:center;
-
-    background:rgba(0,0,0,.42);
-
-    color:white;
-
-    font-size:14px;
-
-    opacity:0;
-
-    transition:.2s;
+    padding:40px 24px;
+    overflow:hidden;
 }
-
-
-.avatar-wrapper:hover
-.avatar-overlay{
-
-    opacity:1;
-}
-
-
-h1{
-
-    font-size:58px;
-
-    letter-spacing:4px;
-
-    margin-bottom:14px;
-}
-
-
-.subtitle{
-
-    color:#888;
-
-    font-size:17px;
-
-    line-height:1.8;
-}
-
-
-.status{
-
-    margin-top:10px;
-
-    color:#aaa;
-
-    font-size:12px;
-}
-
-
-/* =========================
-   卡片
-========================= */
-
-.grid{
-
-    display:grid;
-
-    grid-template-columns:
-        repeat(2,1fr);
-
-    gap:20px;
-}
-
-
-.card{
-
-    display:block;
-
-    position:relative;
-
-    min-height:180px;
-
-    padding:26px;
-
-    background:white;
-
-    border:1px solid #ecece8;
-
-    border-radius:24px;
-
-    text-decoration:none;
-
-    color:#222;
-
-    transition:
-        transform .2s,
-        box-shadow .2s;
-}
-
-
-.card:hover{
-
-    transform:
-        translateY(-4px);
-
-    box-shadow:
-        0 12px 32px
-        rgba(0,0,0,.06);
-}
-
-
-.number{
-
-    color:#aaa;
-
-    font-size:13px;
-
-    margin-bottom:35px;
-}
-
-
-.card h2{
-
-    font-size:26px;
-
-    margin-bottom:10px;
-}
-
-
-.card p{
-
-    color:#888;
-
-    line-height:1.7;
-
-    font-size:14px;
-}
-
-
-.arrow{
-
+.hero::before{
+    content:"";
     position:absolute;
-
+    inset:-20%;
+    background:
+      radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(85,180,210,.18),transparent 28%),
+      radial-gradient(circle at 25% 25%,rgba(115,145,255,.12),transparent 24%),
+      radial-gradient(circle at 78% 72%,rgba(97,220,187,.10),transparent 22%);
+    filter:blur(12px);
+    transition:background-position .2s ease;
+    pointer-events:none;
+}
+.topbar{
+    position:absolute;
+    top:24px;
+    left:24px;
     right:24px;
-
-    bottom:22px;
-
-    color:#aaa;
-
-    font-size:22px;
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    letter-spacing:.22em;
+    color:#6f6f6f;
+    z-index:2;
 }
-
-
-/* =========================
-   GitHub 特殊一点
-========================= */
-
-.github{
-
-    grid-column:
-        span 2;
-}
-
-
-.github h2{
-
-    font-size:30px;
-}
-
-
-/* =========================
-   footer
-========================= */
-
-footer{
-
-    margin-top:70px;
-
+.hero-inner{
+    position:relative;
+    z-index:2;
+    max-width:940px;
+    width:100%;
     text-align:center;
-
-    color:#aaa;
-
+}
+.logo-shell{
+    width:150px;
+    height:150px;
+    border-radius:36px;
+    margin:0 auto 30px;
+    padding:16px;
+    background:rgba(255,255,255,.55);
+    backdrop-filter:blur(14px);
+    border:1px solid rgba(0,0,0,.06);
+    box-shadow:0 30px 80px rgba(26,53,71,.12);
+    animation:logoIn 1s cubic-bezier(.2,.8,.2,1) both;
+}
+.logo-shell img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:24px;
+    display:block;
+}
+.name{
+    display:flex;
+    justify-content:center;
+    gap:.25em;
+    font-size:clamp(42px,8vw,92px);
+    font-weight:700;
+    letter-spacing:.18em;
+    margin-left:.18em;
+}
+.name span{
+    opacity:0;
+    transform:translateY(18px);
+    animation:letterIn .7s forwards;
+}
+.name span:nth-child(1){animation-delay:.35s}
+.name span:nth-child(2){animation-delay:.45s}
+.name span:nth-child(3){animation-delay:.55s}
+.name span:nth-child(4){animation-delay:.65s}
+.name span:nth-child(5){animation-delay:.75s}
+.tagline{
+    margin-top:24px;
+    font-size:clamp(15px,2vw,20px);
+    color:#666;
+    letter-spacing:.06em;
+    opacity:0;
+    transform:translateY(18px);
+    animation:fadeUp .8s .95s forwards;
+}
+.subline{
+    margin-top:12px;
+    color:#8a8a8a;
+    font-size:14px;
+    opacity:0;
+    transform:translateY(18px);
+    animation:fadeUp .8s 1.08s forwards;
+}
+.enter{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    margin-top:34px;
+    padding:12px 18px;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:999px;
+    background:rgba(255,255,255,.6);
+    backdrop-filter:blur(10px);
+    color:#2c2c2c;
+    font-size:12px;
+    letter-spacing:.2em;
+    opacity:0;
+    transform:translateY(16px);
+    animation:fadeUp .8s 1.22s forwards;
+    transition:.25s ease;
+}
+.enter:hover{
+    transform:translateY(-2px);
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+.grid-wrap{
+    max-width:1100px;
+    margin:0 auto;
+    padding:80px 24px 110px;
+}
+.section-title{
+    margin-bottom:28px;
+    font-size:13px;
+    letter-spacing:.18em;
+    color:#808080;
+}
+.grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px;
+}
+.card{
+    min-height:180px;
+    padding:26px;
+    border-radius:28px;
+    background:rgba(255,255,255,.72);
+    border:1px solid rgba(0,0,0,.06);
+    box-shadow:0 15px 50px rgba(0,0,0,.04);
+    position:relative;
+    overflow:hidden;
+    transform-style:preserve-3d;
+    transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;
+}
+.card:hover{
+    box-shadow:0 26px 70px rgba(0,0,0,.08);
+    border-color:rgba(74,150,200,.18);
+}
+.card .num{
+    font-size:12px;
+    color:#989898;
+    letter-spacing:.16em;
+}
+.card h3{
+    margin-top:44px;
+    font-size:26px;
+    font-weight:600;
+}
+.card p{
+    margin-top:8px;
+    color:#858585;
     font-size:13px;
 }
-
-
-/* =========================
-   手机
-========================= */
-
-@media(max-width:700px){
-
-    body{
-
-        padding:
-            45px
-            16px;
-
-    }
-
-
-    h1{
-
-        font-size:44px;
-
-    }
-
-
-    .avatar-wrapper{
-
-        width:110px;
-
-        height:110px;
-
-    }
-
-
-    .grid{
-
-        grid-template-columns:
-            1fr;
-
-    }
-
-
-    .github{
-
-        grid-column:
-            span 1;
-
-    }
-
-
-    .card{
-
-        min-height:160px;
-
-    }
-
+.card::after{
+    content:"↗";
+    position:absolute;
+    right:24px;
+    bottom:22px;
+    font-size:20px;
+    color:#999;
 }
-
+.card.wide{grid-column:span 2}
+footer{
+    text-align:center;
+    padding:28px;
+    color:#9b9b9b;
+    font-size:12px;
+    letter-spacing:.14em;
+}
+@keyframes logoIn{
+    from{opacity:0;transform:scale(.84) translateY(14px);filter:blur(8px)}
+    to{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
+}
+@keyframes letterIn{
+    to{opacity:1;transform:translateY(0)}
+}
+@keyframes fadeUp{
+    to{opacity:1;transform:translateY(0)}
+}
+@media (max-width:700px){
+    .topbar{top:18px;left:18px;right:18px}
+    .logo-shell{width:118px;height:118px;border-radius:30px}
+    .grid{grid-template-columns:1fr}
+    .card.wide{grid-column:span 1}
+    .card{min-height:150px}
+}
 </style>
-
 </head>
-
-
 <body>
-
-
-<!-- =========================
-     顶部头像
-========================= -->
-
-<div class="hero">
-
-
-<div class="avatar-box">
-
-<div class="avatar-wrapper">
-
-<img
-    id="siteAvatar"
-    class="avatar"
-    src="avatar.png"
-    alt=""
->
-
-</div>
-
-</div>
-
-
-<h1>ZUMIN</h1>
-
-
-<div class="subtitle">
-
-记录生活，
-
-<br>
-
-也记录那些尚未发生的事。
-
-</div>
-
-
-
-
-
-</div>
-
-
-
-<!-- =========================
-     网站入口
-========================= -->
-
-<div class="grid">
-
-
-<!-- GitHub -->
-
-<a
-    class="card github"
-    href="https://github.com/zuminwu3-lang"
-    target="_blank"
-    rel="noopener"
->
-
-<div class="number">
-01
-</div>
-
-<h2>
-GitHub
-</h2>
-
-<p>
-代码、项目与学习记录
-</p>
-
-<div class="arrow">
-↗
-</div>
-
-</a>
-
-
-
-<!-- 日记 -->
-
-<a
-    class="card"
-    href="diary.html"
->
-
-<div class="number">
-02
-</div>
-
-<h2>
-日记
-</h2>
-
-<p>
-写下一些真实发生的事情
-</p>
-
-<div class="arrow">
-→
-</div>
-
-</a>
-
-
-
-<!-- 日常 -->
-
-<a
-    class="card"
-    href="life.html"
->
-
-<div class="number">
-03
-</div>
-
-<h2>
-日常
-</h2>
-
-<p>
-图片、文件与生活碎片
-</p>
-
-<div class="arrow">
-→
-</div>
-
-</a>
-
-
-
-<!-- 设想 -->
-
-<a
-    class="card"
-    href="ideas.html"
->
-
-<div class="number">
-04
-</div>
-
-<h2>
-设想
-</h2>
-
-<p>
-天马行空，以及那些尚未发生的事情
-</p>
-
-<div class="arrow">
-→
-</div>
-
-</a>
-
-
-
-<!-- 记账 -->
-
-<a
-    class="card"
-    href="ledger.html"
->
-
-<div class="number">
-05
-</div>
-
-<h2>
-记账
-</h2>
-
-<p>
-记录早餐、中餐、晚餐、水果、水和其他支出
-</p>
-
-<div class="arrow">
-→
-</div>
-
-</a>
-
-
-<!-- 健康 -->
-
-<a
-    class="card"
-    href="health.html"
->
-
-<div class="number">
-06
-</div>
-
-<h2>
-健康
-</h2>
-
-<p>
-记录睡眠、喝水、运动和体重
-</p>
-
-<div class="arrow">
-→
-</div>
-
-</a>
-
-
-<!-- 关于我 -->
-
-<a
-    class="card"
-    href="about.html"
->
-
-<div class="number">
-07
-</div>
-
-<h2>
-关于我
-</h2>
-
-<p>
-一点关于我的介绍
-</p>
-
-<div class="arrow">
-→
-</div>
-
-</a>
-
-
-</div>
-
-
-
-<footer>
-
-ZUMIN · 2026
-
-</footer>
-
-
-
-
-
-
+<section class="hero" id="top">
+    <div class="topbar">
+        <div>ZUMIN / 2026</div>
+        <div>PERSONAL SPACE</div>
+    </div>
+
+    <div class="hero-inner">
+        <div class="logo-shell">
+            <img src="avatar.png" alt="">
+        </div>
+
+        <div class="name" aria-label="ZUMIN">
+            <span>Z</span><span>U</span><span>M</span><span>I</span><span>N</span>
+        </div>
+
+        <div class="tagline">Biomedical × Life × Ideas</div>
+        <div class="subline">记录生活，也记录那些尚未发生的事。</div>
+
+        <a class="enter" href="#explore">
+            EXPLORE ↓
+        </a>
+    </div>
+</section>
+
+<section class="grid-wrap" id="explore">
+    <div class="section-title">EXPLORE</div>
+
+    <div class="grid">
+        <a class="card tilt" href="https://github.com/zuminwu3-lang" target="_blank" rel="noopener">
+            <div class="num">01</div>
+            <h3>GitHub</h3>
+            <p>代码、项目与实验记录</p>
+        </a>
+
+        <a class="card tilt" href="diary.html">
+            <div class="num">02</div>
+            <h3>日记</h3>
+            <p>写下当天发生的事</p>
+        </a>
+
+        <a class="card tilt" href="life.html">
+            <div class="num">03</div>
+            <h3>日常</h3>
+            <p>照片、文件与生活碎片</p>
+        </a>
+
+        <a class="card tilt" href="ideas.html">
+            <div class="num">04</div>
+            <h3>设想</h3>
+            <p>保存还没实现的想法</p>
+        </a>
+
+        <a class="card tilt" href="ledger.html">
+            <div class="num">05</div>
+            <h3>记账</h3>
+            <p>记录每天的消费</p>
+        </a>
+
+        <a class="card tilt" href="health.html">
+            <div class="num">06</div>
+            <h3>健康</h3>
+            <p>睡眠、运动、体重与生活习惯</p>
+        </a>
+
+        <a class="card wide tilt" href="about.html">
+            <div class="num">07</div>
+            <h3>关于我</h3>
+            <p>一些关于 ZUMIN 的信息</p>
+        </a>
+    </div>
+</section>
+
+<footer>ZUMIN · 2026</footer>
+
+<script>
+document.addEventListener("mousemove",(e)=>{
+    const x=(e.clientX/window.innerWidth)*100;
+    const y=(e.clientY/window.innerHeight)*100;
+    document.documentElement.style.setProperty("--mx",x+"%");
+    document.documentElement.style.setProperty("--my",y+"%");
+});
+
+document.querySelectorAll(".tilt").forEach(card=>{
+    card.addEventListener("mousemove",(e)=>{
+        const r=card.getBoundingClientRect();
+        const x=(e.clientX-r.left)/r.width-.5;
+        const y=(e.clientY-r.top)/r.height-.5;
+        card.style.transform=`perspective(900px) rotateX(${-y*5}deg) rotateY(${x*7}deg) translateY(-4px)`;
+    });
+    card.addEventListener("mouseleave",()=>{
+        card.style.transform="";
+    });
+});
+</script>
 </body>
-
 </html>
