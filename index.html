@@ -1,201 +1,992 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>ZUMIN</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
+
 *{
+    box-sizing:border-box;
     margin:0;
     padding:0;
-    box-sizing:border-box;
 }
 
 body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
-    background:#fafaf8;
-    color:#1e1e1e;
-}
 
-.container{
     max-width:1000px;
-    margin:70px auto;
-    padding:0 24px;
+
+    margin:0 auto;
+
+    padding:70px 24px;
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Microsoft YaHei",
+        sans-serif;
+
+    background:#fafaf8;
+
+    color:#222;
 }
 
-header{
-    margin-bottom:55px;
+
+/* =========================
+   顶部
+========================= */
+
+.hero{
+
+    text-align:center;
+
+    margin-bottom:60px;
 }
 
-h1{
-    font-size:56px;
-    font-weight:600;
-    margin-bottom:12px;
+
+.avatar-box{
+
+    display:flex;
+
+    justify-content:center;
+
+    margin-bottom:24px;
 }
 
-.subtitle{
-    color:#777;
-    font-size:18px;
+
+.avatar-label{
+
+    cursor:pointer;
 }
 
-.grid{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:20px;
+
+.avatar-wrapper{
+
+    width:130px;
+
+    height:130px;
+
+    border-radius:50%;
+
+    position:relative;
+
+    overflow:hidden;
+
+    background:#eeeeea;
+
+    box-shadow:
+        0 8px 30px
+        rgba(0,0,0,.08);
 }
 
-.card{
+
+.avatar{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:cover;
+
     display:block;
-    text-decoration:none;
-    color:inherit;
-    background:white;
-    border:1px solid #ecece8;
-    border-radius:28px;
-    padding:30px;
-    min-height:180px;
+}
+
+
+.avatar-overlay{
+
+    position:absolute;
+
+    inset:0;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    background:rgba(0,0,0,.42);
+
+    color:white;
+
+    font-size:14px;
+
+    opacity:0;
+
     transition:.2s;
 }
 
-.card:hover{
-    transform:translateY(-4px);
-    box-shadow:0 10px 30px rgba(0,0,0,.06);
+
+.avatar-wrapper:hover
+.avatar-overlay{
+
+    opacity:1;
 }
+
+
+h1{
+
+    font-size:58px;
+
+    letter-spacing:4px;
+
+    margin-bottom:14px;
+}
+
+
+.subtitle{
+
+    color:#888;
+
+    font-size:17px;
+
+    line-height:1.8;
+}
+
+
+.status{
+
+    margin-top:10px;
+
+    color:#aaa;
+
+    font-size:12px;
+}
+
+
+/* =========================
+   卡片
+========================= */
+
+.grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(2,1fr);
+
+    gap:20px;
+}
+
+
+.card{
+
+    display:block;
+
+    position:relative;
+
+    min-height:180px;
+
+    padding:26px;
+
+    background:white;
+
+    border:1px solid #ecece8;
+
+    border-radius:24px;
+
+    text-decoration:none;
+
+    color:#222;
+
+    transition:
+        transform .2s,
+        box-shadow .2s;
+}
+
+
+.card:hover{
+
+    transform:
+        translateY(-4px);
+
+    box-shadow:
+        0 12px 32px
+        rgba(0,0,0,.06);
+}
+
 
 .number{
+
     color:#aaa;
+
     font-size:13px;
-    margin-bottom:38px;
+
+    margin-bottom:35px;
 }
 
-.title{
-    font-size:28px;
+
+.card h2{
+
+    font-size:26px;
+
     margin-bottom:10px;
 }
 
-.desc{
-    color:#777;
-    line-height:1.6;
-}
 
-.footer{
-    margin-top:50px;
-    color:#aaa;
+.card p{
+
+    color:#888;
+
+    line-height:1.7;
+
     font-size:14px;
 }
 
+
+.arrow{
+
+    position:absolute;
+
+    right:24px;
+
+    bottom:22px;
+
+    color:#aaa;
+
+    font-size:22px;
+}
+
+
+/* =========================
+   GitHub 特殊一点
+========================= */
+
+.github{
+
+    grid-column:
+        span 2;
+}
+
+
+.github h2{
+
+    font-size:30px;
+}
+
+
+/* =========================
+   footer
+========================= */
+
+footer{
+
+    margin-top:70px;
+
+    text-align:center;
+
+    color:#aaa;
+
+    font-size:13px;
+}
+
+
+/* =========================
+   手机
+========================= */
+
 @media(max-width:700px){
-    .grid{
-        grid-template-columns:1fr;
+
+    body{
+
+        padding:
+            45px
+            16px;
+
     }
 
+
     h1{
+
         font-size:44px;
+
     }
+
+
+    .avatar-wrapper{
+
+        width:110px;
+
+        height:110px;
+
+    }
+
+
+    .grid{
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .github{
+
+        grid-column:
+            span 1;
+
+    }
+
+
+    .card{
+
+        min-height:160px;
+
+    }
+
 }
+
 </style>
+
 </head>
+
 
 <body>
 
-<div class="container">
 
-<header>
-    <h1>ZUMIN</h1>
-    <div class="subtitle">
-        记录生活，也记录那些尚未发生的事。
-    </div>
-</header>
+<!-- =========================
+     顶部头像
+========================= -->
+
+<div class="hero">
+
+
+<div class="avatar-box">
+
+<label class="avatar-label">
+
+<div class="avatar-wrapper">
+
+<img
+    id="siteAvatar"
+    class="avatar"
+    alt="ZUMIN"
+>
+
+<div class="avatar-overlay">
+更换图标
+</div>
+
+</div>
+
+
+<input
+    id="avatarInput"
+    type="file"
+    accept="image/*"
+    hidden
+>
+
+</label>
+
+</div>
+
+
+<h1>ZUMIN</h1>
+
+
+<div class="subtitle">
+
+记录生活，
+
+<br>
+
+也记录那些尚未发生的事。
+
+</div>
+
+
+<div
+    id="avatarStatus"
+    class="status">
+</div>
+
+
+</div>
+
+
+
+<!-- =========================
+     网站入口
+========================= -->
 
 <div class="grid">
 
-<a class="card"
-   href="https://github.com/zuminwu3-lang"
-   target="_blank">
 
-    <div class="number">01</div>
+<!-- GitHub -->
 
-    <div class="title">
-        GitHub ↗
-    </div>
+<a
+    class="card github"
+    href="https://github.com/zuminwu3-lang"
+    target="_blank"
+    rel="noopener"
+>
 
-    <div class="desc">
-        代码、项目与学习记录
-    </div>
+<div class="number">
+01
+</div>
 
-</a>
+<h2>
+GitHub
+</h2>
 
+<p>
+代码、项目与学习记录
+</p>
 
-<a class="card"
-   href="diary.html">
-
-    <div class="number">02</div>
-
-    <div class="title">
-        日记 →
-    </div>
-
-    <div class="desc">
-        写下一些真实发生的事情
-    </div>
+<div class="arrow">
+↗
+</div>
 
 </a>
 
 
-<a class="card"
-   href="life.html">
 
-    <div class="number">03</div>
+<!-- 日记 -->
 
-    <div class="title">
-        日常 →
-    </div>
+<a
+    class="card"
+    href="diary.html"
+>
 
-    <div class="desc">
-        图片与生活碎片
-    </div>
+<div class="number">
+02
+</div>
 
-</a>
+<h2>
+日记
+</h2>
 
+<p>
+写下一些真实发生的事情
+</p>
 
-<a class="card"
-   href="ideas.html">
-
-    <div class="number">04</div>
-
-    <div class="title">
-        设想 →
-    </div>
-
-    <div class="desc">
-        天马行空，以及那些尚未发生的事情
-    </div>
+<div class="arrow">
+→
+</div>
 
 </a>
 
 
-<a class="card"
-   href="about.html">
 
-    <div class="number">05</div>
+<!-- 日常 -->
 
-    <div class="title">
-        关于我 →
-    </div>
+<a
+    class="card"
+    href="life.html"
+>
 
-    <div class="desc">
-        一点关于我的介绍
-    </div>
+<div class="number">
+03
+</div>
+
+<h2>
+日常
+</h2>
+
+<p>
+图片、文件与生活碎片
+</p>
+
+<div class="arrow">
+→
+</div>
 
 </a>
+
+
+
+<!-- 设想 -->
+
+<a
+    class="card"
+    href="ideas.html"
+>
+
+<div class="number">
+04
+</div>
+
+<h2>
+设想
+</h2>
+
+<p>
+天马行空，以及那些尚未发生的事情
+</p>
+
+<div class="arrow">
+→
+</div>
+
+</a>
+
+
+
+<!-- 记账 -->
+
+<a
+    class="card"
+    href="ledger.html"
+>
+
+<div class="number">
+05
+</div>
+
+<h2>
+记账
+</h2>
+
+<p>
+记录早餐、中餐、晚餐、水果、水和其他支出
+</p>
+
+<div class="arrow">
+→
+</div>
+
+</a>
+
+
+
+<!-- 关于我 -->
+
+<a
+    class="card"
+    href="about.html"
+>
+
+<div class="number">
+06
+</div>
+
+<h2>
+关于我
+</h2>
+
+<p>
+一点关于我的介绍
+</p>
+
+<div class="arrow">
+→
+</div>
+
+</a>
+
 
 </div>
 
-<div class="footer">
-    ZUMIN · 2026
-</div>
 
-</div>
+
+<footer>
+
+ZUMIN · 2026
+
+</footer>
+
+
+
+<script>
+
+
+/* =========================================
+   Supabase
+========================================= */
+
+
+const SUPABASE_URL =
+"https://kgmhpsoiqnjszkrknqki.supabase.co";
+
+
+const SUPABASE_ANON_KEY =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s";
+
+
+const sbClient =
+window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+
+
+/* =========================================
+   网站头像
+========================================= */
+
+
+const siteAvatar =
+document.getElementById(
+    "siteAvatar"
+);
+
+
+const avatarInput =
+document.getElementById(
+    "avatarInput"
+);
+
+
+const avatarStatus =
+document.getElementById(
+    "avatarStatus"
+);
+
+
+
+/* 默认头像 */
+
+function setDefaultAvatar(){
+
+    siteAvatar.src =
+    "data:image/svg+xml;charset=UTF-8,"
+    +
+    encodeURIComponent(`
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="300"
+            height="300"
+            viewBox="0 0 300 300">
+
+            <rect
+                width="300"
+                height="300"
+                fill="#eeeeea"
+            />
+
+            <text
+                x="150"
+                y="175"
+                text-anchor="middle"
+                font-size="90"
+                font-family="Arial"
+                fill="#888888">
+                Z
+            </text>
+
+        </svg>
+    `);
+
+}
+
+
+
+/* =========================================
+   读取网站头像
+========================================= */
+
+
+async function loadSiteAvatar(){
+
+    setDefaultAvatar();
+
+
+    try{
+
+        const {
+            data,
+            error
+        } =
+
+        await sbClient
+
+        .from("site_settings")
+
+        .select("value")
+
+        .eq(
+            "key",
+            "site_avatar"
+        )
+
+        .maybeSingle();
+
+
+        if(error)
+            throw error;
+
+
+        if(
+            data &&
+            data.value
+        ){
+
+            siteAvatar.src =
+            data.value;
+
+        }
+
+    }
+
+    catch(error){
+
+        console.error(
+            "头像读取失败：",
+            error
+        );
+
+
+        avatarStatus.textContent =
+        "头像暂时无法读取";
+
+    }
+
+}
+
+
+
+/* =========================================
+   上传头像
+========================================= */
+
+
+avatarInput.addEventListener(
+"change",
+async () => {
+
+
+    const file =
+    avatarInput.files[0];
+
+
+    if(!file)
+        return;
+
+
+
+    if(
+        !file.type.startsWith(
+            "image/"
+        )
+    ){
+
+        alert(
+            "请选择图片文件"
+        );
+
+        return;
+    }
+
+
+
+    /* 限制头像大小 5MB */
+
+    if(
+        file.size >
+        5 * 1024 * 1024
+    ){
+
+        alert(
+            "图片不能超过 5MB"
+        );
+
+        return;
+    }
+
+
+
+    avatarStatus.textContent =
+    "正在上传...";
+
+
+
+    try{
+
+
+        const extension =
+
+        file.name.includes(".")
+
+        ?
+
+        file.name
+        .split(".")
+        .pop()
+
+        :
+
+        "jpg";
+
+
+
+        const filePath =
+
+        "profile/site-avatar-"
+        +
+        Date.now()
+        +
+        "."
+        +
+        extension;
+
+
+
+        /* 上传到 moments bucket */
+
+        const {
+            error:
+            uploadError
+        } =
+
+        await sbClient
+
+        .storage
+
+        .from("moments")
+
+        .upload(
+            filePath,
+            file,
+            {
+                cacheControl:
+                "3600",
+
+                upsert:false
+            }
+        );
+
+
+
+        if(uploadError)
+            throw uploadError;
+
+
+
+        /* 获取公开地址 */
+
+        const {
+            data:urlData
+        } =
+
+        sbClient
+
+        .storage
+
+        .from("moments")
+
+        .getPublicUrl(
+            filePath
+        );
+
+
+
+        const imageUrl =
+        urlData.publicUrl;
+
+
+
+        /* 保存头像地址 */
+
+        const {
+            error:
+            settingError
+        } =
+
+        await sbClient
+
+        .from("site_settings")
+
+        .upsert(
+            {
+
+                key:
+                "site_avatar",
+
+                value:
+                imageUrl,
+
+                updated_at:
+                new Date()
+                .toISOString()
+
+            },
+
+            {
+
+                onConflict:
+                "key"
+
+            }
+        );
+
+
+
+        if(settingError)
+            throw settingError;
+
+
+
+        siteAvatar.src =
+        imageUrl;
+
+
+        avatarStatus.textContent =
+        "✓ 图标已更新";
+
+
+
+        setTimeout(
+            () => {
+
+                avatarStatus.textContent =
+                "";
+
+            },
+            2500
+        );
+
+
+    }
+
+    catch(error){
+
+
+        console.error(
+            error
+        );
+
+
+        avatarStatus.textContent =
+        "";
+
+
+        alert(
+            "图标上传失败：\n"
+            +
+            error.message
+        );
+
+    }
+
+
+
+    avatarInput.value =
+    "";
+
+});
+
+
+
+/* =========================================
+   页面启动
+========================================= */
+
+
+loadSiteAvatar();
+
+
+</script>
+
 
 </body>
+
 </html>
