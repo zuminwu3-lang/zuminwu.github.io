@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>记账 · ZUMIN</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+body{
+    max-width:1100px;
+    margin:60px auto;
+    padding:0 24px;
+    font-family:-apple-system,BlinkMacSystemFont,
+        "Segoe UI","Microsoft YaHei",sans-serif;
+    background:#fafaf8;
+    color:#222;
+}
+
+a{
+    text-decoration:none;
+    color:#777;
+}
+
+h1{
+    font-size:44px;
+    margin:40px 0 10px;
+}
+
+.subtitle{
+    color:#888;
+    margin-bottom:10px;
+}
+
+.status{
+    color:#aaa;
+    font-size:13px;
+    margin-bottom:30px;
+}
+
+/* 输入区域 */
+
+.editor{
+    background:white;
+    border:1px solid #ecece8;
+    border-radius:22px;
+    padding:22px;
+    margin-bottom:30px;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+}
+
+.field label{
+    display:block;
+    color:#777;
+    font-size:13px;
+    margin-bottom:6px;
+}
+
+.field input{
+    width:100%;
+    padding:11px;
+    border:1px solid #ddd;
+    border-radius:12px;
+    font-size:15px;
+    background:#fafaf8;
+}
+
+.field input:focus{
+    outline:none;
+    border-color:#999;
+}
+
+.buttons{
+    margin-top:18px;
+    display:flex;
+    justify-content:flex-end;
+}
+
+button{
+    border:none;
+    border-radius:999px;
+    background:#222;
+    color:white;
+    padding:10px 22px;
+    cursor:pointer;
+    font-size:14px;
+}
+
+button:hover{
+    background:#444;
+}
+
+/* 表格 */
+
+.table-box{
+    overflow-x:auto;
+    background:white;
+    border:1px solid #ecece8;
+    border-radius:22px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:850px;
+}
+
+th,
+td{
+    padding:15px 12px;
+    text-align:center;
+    border-bottom:1px solid #eee;
+}
+
+th{
+    color:#777;
+    font-size:13px;
+    font-weight:500;
+    background:#fafaf8;
+}
+
+td{
+    font-size:14px;
+}
+
+.total{
+    font-weight:600;
+}
+
+.actions button{
+    padding:5px 10px;
+    font-size:12px;
+    margin:2px;
+    background:#f1f1ed;
+    color:#666;
+}
+
+.actions .delete{
+    color:#b33;
+}
+
+.empty{
+    padding:40px;
+    color:#aaa;
+    text-align:center;
+}
+
+/* 月统计 */
+
+.summary{
+    margin-top:22px;
+    background:white;
+    border:1px solid #ecece8;
+    border-radius:20px;
+    padding:20px;
+    display:flex;
+    justify-content:space-between;
+}
+
+.summary-number{
+    font-size:25px;
+    font-weight:600;
+}
+
+.summary-label{
+    color:#999;
+    font-size:13px;
+    margin-bottom:5px;
+}
+
+@media(max-width:750px){
+
+    body{
+        margin:30px auto;
+        padding:0 15px;
+    }
+
+    .form-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    h1{
+        font-size:38px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<a href="index.html">← 返回首页</a>
+
+<h1>记账</h1>
+
+<div class="subtitle">
+记录每天的生活支出。
+</div>
+
+<div id="status" class="status">
+连接中...
+</div>
+
+
+<div class="editor">
+
+<div class="form-grid">
+
+<div class="field">
+<label>日期</label>
+<input type="date" id="date">
+</div>
+
+<div class="field">
+<label>早餐</label>
+<input type="number" id="breakfast" step="0.01" min="0" placeholder="0">
+</div>
+
+<div class="field">
+<label>中餐</label>
+<input type="number" id="lunch" step="0.01" min="0" placeholder="0">
+</div>
+
+<div class="field">
+<label>晚餐</label>
+<input type="number" id="dinner" step="0.01" min="0" placeholder="0">
+</div>
+
+<div class="field">
+<label>水果</label>
+<input type="number" id="fruit" step="0.01" min="0" placeholder="0">
+</div>
+
+<div class="field">
+<label>水</label>
+<input type="number" id="water" step="0.01" min="0" placeholder="0">
+</div>
+
+<div class="field">
+<label>其他</label>
+<input type="number" id="other" step="0.01" min="0" placeholder="0">
+</div>
+
+</div>
+
+<div class="buttons">
+<button id="saveBtn">保存今日账单</button>
+</div>
+
+</div>
+
+
+<div class="table-box">
+
+<table>
+
+<thead>
+<tr>
+<th>日期</th>
+<th>早餐</th>
+<th>中餐</th>
+<th>晚餐</th>
+<th>水果</th>
+<th>水</th>
+<th>其他</th>
+<th>合计</th>
+<th>操作</th>
+</tr>
+</thead>
+
+<tbody id="ledgerBody">
+<tr>
+<td colspan="9" class="empty">加载中...</td>
+</tr>
+</tbody>
+
+</table>
+
+</div>
+
+
+<div class="summary">
+
+<div>
+<div class="summary-label">全部记录支出</div>
+<div class="summary-number" id="grandTotal">¥0.00</div>
+</div>
+
+<div>
+<div class="summary-label">记录天数</div>
+<div class="summary-number" id="dayCount">0</div>
+</div>
+
+</div>
+
+
+<script>
+
+const SUPABASE_URL =
+"https://kgmhpsoiqnjszkrknqki.supabase.co";
+
+const SUPABASE_ANON_KEY =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s";
+
+const sbClient =
+window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+const dateInput = document.getElementById("date");
+const breakfastInput = document.getElementById("breakfast");
+const lunchInput = document.getElementById("lunch");
+const dinnerInput = document.getElementById("dinner");
+const fruitInput = document.getElementById("fruit");
+const waterInput = document.getElementById("water");
+const otherInput = document.getElementById("other");
+
+const saveBtn = document.getElementById("saveBtn");
+const ledgerBody = document.getElementById("ledgerBody");
+const statusText = document.getElementById("status");
+const grandTotal = document.getElementById("grandTotal");
+const dayCount = document.getElementById("dayCount");
+
+let records = [];
+
+
+/* 今天日期 */
+
+function getLocalDateString(){
+
+    const now = new Date();
+
+    const year = now.getFullYear();
+
+    const month =
+        String(now.getMonth() + 1).padStart(2,"0");
+
+    const day =
+        String(now.getDate()).padStart(2,"0");
+
+    return `${year}-${month}-${day}`;
+}
+
+dateInput.value = getLocalDateString();
+
+
+function number(input){
+
+    const value =
+        parseFloat(input.value);
+
+    return isNaN(value) ? 0 : value;
+}
+
+
+function money(value){
+
+    return "¥" +
+        Number(value || 0).toFixed(2);
+}
+
+
+/* 读取数据库 */
+
+async function loadLedger(){
+
+    try{
+
+        const {data,error} =
+        await sbClient
+        .from("ledger")
+        .select("*")
+        .order("date",{ascending:false});
+
+        if(error)
+            throw error;
+
+        records = data || [];
+
+        statusText.textContent =
+            "✅ 已连接";
+
+        renderLedger();
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        statusText.textContent =
+            "❌ 连接失败";
+
+        ledgerBody.innerHTML =
+        `
+        <tr>
+        <td colspan="9" class="empty">
+        ${error.message}
+        </td>
+        </tr>
+        `;
+    }
+}
+
+
+/* 保存当天记录 */
+
+async function saveLedger(){
+
+    if(!dateInput.value){
+
+        alert("请选择日期");
+
+        return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = "保存中...";
+
+    const record = {
+
+        date:dateInput.value,
+
+        breakfast:number(breakfastInput),
+
+        lunch:number(lunchInput),
+
+        dinner:number(dinnerInput),
+
+        fruit:number(fruitInput),
+
+        water:number(waterInput),
+
+        other:number(otherInput),
+
+        updated_at:new Date().toISOString()
+    };
+
+    try{
+
+        /*
+        date 是唯一值。
+
+        同一天再次保存时，
+        自动修改当天记录，
+        不会产生第二行。
+        */
+
+        const {error} =
+        await sbClient
+        .from("ledger")
+        .upsert(
+            record,
+            {
+                onConflict:"date"
+            }
+        );
+
+        if(error)
+            throw error;
+
+        clearMoneyInputs();
+
+        await loadLedger();
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "保存失败：\n" +
+            error.message
+        );
+
+    }
+
+    finally{
+
+        saveBtn.disabled = false;
+        saveBtn.textContent = "保存今日账单";
+    }
+}
+
+
+function clearMoneyInputs(){
+
+    breakfastInput.value = "";
+    lunchInput.value = "";
+    dinnerInput.value = "";
+    fruitInput.value = "";
+    waterInput.value = "";
+    otherInput.value = "";
+}
+
+
+/* 显示表格 */
+
+function renderLedger(){
+
+    if(records.length === 0){
+
+        ledgerBody.innerHTML =
+        `
+        <tr>
+        <td colspan="9" class="empty">
+        还没有记账记录。
+        </td>
+        </tr>
+        `;
+
+        grandTotal.textContent = "¥0.00";
+        dayCount.textContent = "0";
+
+        return;
+    }
+
+
+    let html = "";
+    let allTotal = 0;
+
+
+    for(const item of records){
+
+        const total =
+            Number(item.breakfast || 0) +
+            Number(item.lunch || 0) +
+            Number(item.dinner || 0) +
+            Number(item.fruit || 0) +
+            Number(item.water || 0) +
+            Number(item.other || 0);
+
+        allTotal += total;
+
+
+        html +=
+        `
+        <tr>
+
+        <td>${item.date}</td>
+
+        <td>${money(item.breakfast)}</td>
+
+        <td>${money(item.lunch)}</td>
+
+        <td>${money(item.dinner)}</td>
+
+        <td>${money(item.fruit)}</td>
+
+        <td>${money(item.water)}</td>
+
+        <td>${money(item.other)}</td>
+
+        <td class="total">
+        ${money(total)}
+        </td>
+
+        <td class="actions">
+
+        <button onclick="editRecord(${item.id})">
+        编辑
+        </button>
+
+        <button
+        class="delete"
+        onclick="deleteRecord(${item.id})">
+        删除
+        </button>
+
+        </td>
+
+        </tr>
+        `;
+    }
+
+
+    ledgerBody.innerHTML = html;
+
+    grandTotal.textContent =
+        money(allTotal);
+
+    dayCount.textContent =
+        records.length;
+}
+
+
+/* 编辑 */
+
+window.editRecord =
+function(id){
+
+    const item =
+        records.find(
+            record =>
+            record.id === id
+        );
+
+    if(!item)
+        return;
+
+
+    dateInput.value =
+        item.date;
+
+    breakfastInput.value =
+        item.breakfast || "";
+
+    lunchInput.value =
+        item.lunch || "";
+
+    dinnerInput.value =
+        item.dinner || "";
+
+    fruitInput.value =
+        item.fruit || "";
+
+    waterInput.value =
+        item.water || "";
+
+    otherInput.value =
+        item.other || "";
+
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+};
+
+
+/* 删除 */
+
+window.deleteRecord =
+async function(id){
+
+    if(!confirm("确定删除这一天的记录吗？"))
+        return;
+
+
+    try{
+
+        const {error} =
+        await sbClient
+        .from("ledger")
+        .delete()
+        .eq("id",id);
+
+        if(error)
+            throw error;
+
+        await loadLedger();
+
+    }
+
+    catch(error){
+
+        alert(
+            "删除失败：\n" +
+            error.message
+        );
+    }
+};
+
+
+saveBtn.addEventListener(
+    "click",
+    saveLedger
+);
+
+
+loadLedger();
+
+</script>
+
+</body>
+</html>
