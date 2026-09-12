@@ -91,6 +91,67 @@ textarea:focus{
     color:#666;
 }
 
+.file-item{
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    padding:8px 0;
+    border-bottom:1px solid #ecece8;
+}
+
+.file-item:last-child{
+    border-bottom:none;
+}
+
+.file-item-name{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.file-item-size{
+    flex:0 0 auto;
+    color:#999;
+}
+
+.file-item-size.saved{
+    color:#4c8a68;
+}
+
+.upload-progress{
+    display:none;
+    margin-top:14px;
+}
+
+.upload-progress.show{
+    display:block;
+}
+
+.progress-line{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:7px;
+    color:#777;
+    font-size:13px;
+}
+
+.progress-track{
+    height:8px;
+    overflow:hidden;
+    border-radius:999px;
+    background:#ecece8;
+}
+
+.progress-bar{
+    width:0%;
+    height:100%;
+    border-radius:inherit;
+    background:#222;
+    transition:width .2s ease;
+}
+
 .publish-row{
     display:flex;
     justify-content:flex-end;
@@ -253,12 +314,22 @@ button:disabled{
 >
 
 <div class="file-tip">
-可以上传图片、PDF、Word、TXT、ZIP 等文件
+可以上传图片、PDF、Word、TXT、ZIP 等文件。JPEG / PNG / WebP 图片会在上传前自动压缩。
 </div>
 
 <div
     id="selectedFiles"
     class="selected-files">
+</div>
+
+<div id="uploadProgress" class="upload-progress">
+    <div class="progress-line">
+        <span id="progressText">准备上传…</span>
+        <span id="progressPercent">0%</span>
+    </div>
+    <div class="progress-track">
+        <div id="progressBar" class="progress-bar"></div>
+    </div>
 </div>
 
 </div>
@@ -318,7 +389,21 @@ document.getElementById("momentList");
 const statusText =
 document.getElementById("status");
 
+const uploadProgress =
+document.getElementById("uploadProgress");
+
+const progressText =
+document.getElementById("progressText");
+
+const progressPercent =
+document.getElementById("progressPercent");
+
+const progressBar =
+document.getElementById("progressBar");
+
 let moments = [];
+let preparedFiles = [];
+let preparingFiles = false;
 
 
 function escapeHtml(text){
@@ -333,30 +418,177 @@ function escapeHtml(text){
 }
 
 
-fileInput.addEventListener(
-"change",
-() => {
+function formatBytes(bytes){
+    if(!Number.isFinite(bytes) || bytes <= 0)
+        return "0 KB";
 
-    const files =
-    Array.from(fileInput.files);
+    const units = ["B","KB","MB","GB"];
+    const i = Math.min(
+        Math.floor(Math.log(bytes) / Math.log(1024)),
+        units.length - 1
+    );
 
-    if(files.length === 0){
+    const value = bytes / Math.pow(1024, i);
+    return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
 
+
+function setProgress(percent, text){
+    const value = Math.max(0, Math.min(100, Math.round(percent)));
+    uploadProgress.classList.add("show");
+    progressBar.style.width = value + "%";
+    progressPercent.textContent = value + "%";
+    progressText.textContent = text || "上传中…";
+}
+
+
+function resetProgress(){
+    uploadProgress.classList.remove("show");
+    progressBar.style.width = "0%";
+    progressPercent.textContent = "0%";
+    progressText.textContent = "准备上传…";
+}
+
+
+function canCompressImage(file){
+    return [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ].includes(file.type);
+}
+
+
+async function compressImage(file){
+    if(!canCompressImage(file))
+        return file;
+
+    return new Promise((resolve) => {
+        const objectUrl = URL.createObjectURL(file);
+        const img = new Image();
+
+        img.onload = () => {
+            try{
+                const MAX_EDGE = 1920;
+                const scale = Math.min(
+                    1,
+                    MAX_EDGE / Math.max(img.naturalWidth, img.naturalHeight)
+                );
+
+                // 小图并且本身已经很轻，不额外重编码。
+                if(scale === 1 && file.size <= 1024 * 1024){
+                    URL.revokeObjectURL(objectUrl);
+                    resolve(file);
+                    return;
+                }
+
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+                canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                const quality = file.type === "image/png" ? undefined : 0.82;
+
+                canvas.toBlob(
+                    (blob) => {
+                        URL.revokeObjectURL(objectUrl);
+
+                        if(!blob || blob.size >= file.size){
+                            resolve(file);
+                            return;
+                        }
+
+                        resolve(new File(
+                            [blob],
+                            file.name,
+                            {
+                                type:file.type,
+                                lastModified:file.lastModified
+                            }
+                        ));
+                    },
+                    file.type,
+                    quality
+                );
+            }
+            catch(error){
+                console.warn("图片压缩失败，改用原图：", error);
+                URL.revokeObjectURL(objectUrl);
+                resolve(file);
+            }
+        };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(file);
+        };
+
+        img.src = objectUrl;
+    });
+}
+
+
+function renderSelectedFiles(){
+    if(preparedFiles.length === 0){
         selectedFiles.innerHTML = "";
-
         return;
-
     }
 
-    selectedFiles.innerHTML =
-    files
-    .map(
-        file =>
-        "📎 " +
-        escapeHtml(file.name)
-    )
-    .join("<br>");
+    selectedFiles.innerHTML = preparedFiles
+    .map(({ original, upload }) => {
+        const compressed = upload.size < original.size;
+        const sizeText = compressed
+            ? `${formatBytes(original.size)} → ${formatBytes(upload.size)}`
+            : formatBytes(original.size);
 
+        const savedText = compressed
+            ? `（节省 ${Math.round((1 - upload.size / original.size) * 100)}%）`
+            : "";
+
+        return `
+        <div class="file-item">
+            <span class="file-item-name">📎 ${escapeHtml(original.name)}</span>
+            <span class="file-item-size ${compressed ? "saved" : ""}">
+                ${sizeText}${savedText}
+            </span>
+        </div>`;
+    })
+    .join("");
+}
+
+
+fileInput.addEventListener(
+"change",
+async () => {
+    const files = Array.from(fileInput.files);
+    preparedFiles = [];
+    resetProgress();
+
+    if(files.length === 0){
+        selectedFiles.innerHTML = "";
+        return;
+    }
+
+    preparingFiles = true;
+    publishBtn.disabled = true;
+    publishBtn.textContent = "正在处理图片…";
+    selectedFiles.innerHTML = "正在准备文件…";
+
+    try{
+        for(let i = 0; i < files.length; i++){
+            const original = files[i];
+            const upload = await compressImage(original);
+            preparedFiles.push({ original, upload });
+            renderSelectedFiles();
+        }
+    }
+    finally{
+        preparingFiles = false;
+        publishBtn.disabled = false;
+        publishBtn.textContent = "＋ 发布日常";
+    }
 }
 );
 
@@ -627,11 +859,18 @@ async function uploadFile(file){
 
 async function publishMoment(){
 
+    if(preparingFiles){
+        alert("图片还在处理中，请稍等一下");
+        return;
+    }
+
     const content =
     contentInput.value.trim();
 
     const files =
-    Array.from(fileInput.files);
+    preparedFiles.length > 0
+    ? preparedFiles
+    : Array.from(fileInput.files).map(file => ({ original:file, upload:file }));
 
 
     if(
@@ -651,8 +890,7 @@ async function publishMoment(){
     publishBtn.disabled =
     true;
 
-    publishBtn.textContent =
-    "上传中...";
+    setProgress(0, "准备发布…");
 
 
     try{
@@ -675,6 +913,8 @@ async function publishMoment(){
             if(error)
                 throw error;
 
+            setProgress(100, "发布完成");
+
         }
 
         else{
@@ -686,9 +926,18 @@ async function publishMoment(){
                 i++
             ){
 
-                const file =
-                files[i];
+                const item = files[i];
+                const file = item.upload;
+                const original = item.original;
 
+                const base = (i / files.length) * 100;
+                const afterUpload = ((i + 0.8) / files.length) * 100;
+                const done = ((i + 1) / files.length) * 100;
+
+                setProgress(
+                    base,
+                    `上传 ${i + 1}/${files.length}：${original.name}`
+                );
 
                 publishBtn.textContent =
                 `上传中 ${i + 1}/${files.length}`;
@@ -696,6 +945,11 @@ async function publishMoment(){
 
                 const uploaded =
                 await uploadFile(file);
+
+                setProgress(
+                    afterUpload,
+                    `正在保存 ${i + 1}/${files.length}…`
+                );
 
 
                 const {
@@ -720,17 +974,26 @@ async function publishMoment(){
                         uploaded.path,
 
                         file_name:
-                        file.name,
+                        original.name,
 
                         file_type:
-                        file.type
+                        file.type || original.type
 
                     }
                 ]);
 
 
-                if(error)
+                if(error){
+                    // 数据库写入失败时，尽量清掉已经上传的孤立文件。
+                    await sbClient
+                    .storage
+                    .from("moments")
+                    .remove([uploaded.path]);
+
                     throw error;
+                }
+
+                setProgress(done, `已完成 ${i + 1}/${files.length}`);
 
             }
 
@@ -741,16 +1004,23 @@ async function publishMoment(){
 
         fileInput.value = "";
 
+        preparedFiles = [];
+
         selectedFiles.innerHTML = "";
 
 
         await loadMoments();
+
+        setProgress(100, "发布完成 ✓");
+        setTimeout(resetProgress, 1600);
 
     }
 
     catch(error){
 
         console.error(error);
+
+        setProgress(0, "发布失败");
 
         alert(
             "发布失败：\n"
