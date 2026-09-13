@@ -211,6 +211,39 @@ footer{
     .card.wide{grid-column:span 1}
     .card{min-height:150px}
 }
+
+.stats-bar{
+    max-width:1100px;
+    margin:0 auto 22px;
+    padding:0 24px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    color:#8f8f8f;
+    font-size:12px;
+    letter-spacing:.06em;
+}
+.stats-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 12px;
+    border:1px solid rgba(0,0,0,.06);
+    border-radius:999px;
+    background:rgba(255,255,255,.68);
+}
+.owner-btn{
+    border:0;
+    cursor:pointer;
+    color:#7a7a7a;
+    background:transparent;
+    font:inherit;
+    padding:0;
+}
+.owner-btn:hover{color:#222}
+
 </style>
 </head>
 <body>
@@ -278,21 +311,52 @@ footer{
             <p>睡眠、运动、体重与生活习惯</p>
         </a>
 
-        <a class="card tilt" href="about.html">
+        <a class="card wide tilt" href="about.html">
             <div class="num">07</div>
             <h3>关于我</h3>
             <p>一些关于 ZUMIN 的信息</p>
         </a>
-
-        <a class="card tilt" href="language.html">
-            <div class="num">08</div>
-            <h3>语言学习</h3>
-            <p>单词、表达、口语练习与 AI 评测</p>
-        </a>
     </div>
 </section>
 
+
+<div class="stats-bar">
+    <span class="stats-pill">浏览 <strong data-site-views>—</strong></span>
+    <span class="stats-pill">设备 <strong data-site-devices>—</strong></span>
+    <span class="stats-pill">
+        <button id="ownerModeBtn" class="owner-btn" type="button">站长模式：关闭</button>
+    </span>
+</div>
+
 <footer>ZUMIN · 2026</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="analytics.js"></script>
+
+<script>
+const ownerModeBtn = document.getElementById("ownerModeBtn");
+
+function refreshOwnerModeButton(){
+    const isOwner = localStorage.getItem("zumin_owner_mode") === "1";
+    ownerModeBtn.textContent = `站长模式：${isOwner ? "开启" : "关闭"}`;
+}
+
+ownerModeBtn.addEventListener("click", () => {
+    const isOwner = localStorage.getItem("zumin_owner_mode") === "1";
+
+    if(isOwner){
+        localStorage.removeItem("zumin_owner_mode");
+        alert("站长模式已关闭。之后你的访问会计入统计。");
+    }else{
+        localStorage.setItem("zumin_owner_mode","1");
+        alert("站长模式已开启。之后这台浏览器的访问不会计入统计。");
+    }
+
+    refreshOwnerModeButton();
+});
+
+refreshOwnerModeButton();
+</script>
 
 <script>
 document.addEventListener("mousemove",(e)=>{
