@@ -6,72 +6,348 @@
 <title>语言学习 · ZUMIN</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#fafaf8;color:#222;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.wrap{width:min(980px,calc(100% - 32px));margin:auto;padding:42px 0 80px}a{text-decoration:none;color:inherit}.back{font-size:14px;color:#777}.head{margin:30px 0}.head h1{margin:0;font-size:52px;letter-spacing:-2px}.sub,.status{color:#888}.sub{margin-top:8px}.status{margin-top:8px;font-size:13px}.panel,.entry{background:#fff;border:1px solid #ecece7;border-radius:22px;padding:22px}.field{margin-bottom:15px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}label{display:block;font-size:13px;color:#777;margin-bottom:7px}input,textarea{width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:14px;background:#fbfbf9;font:inherit;outline:none}textarea{min-height:180px;resize:vertical;line-height:1.7}.record{margin-top:18px;background:#f7f7f4;border:1px solid #e8e8e2;border-radius:18px;padding:18px}.record-top{display:flex;justify-content:space-between;align-items:center}.timer{font-variant-numeric:tabular-nums;color:#777}.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}button{border:0;border-radius:999px;padding:10px 16px;font:inherit;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:#222;color:#fff}.secondary{background:#e9e9e4}.danger{background:#f8eaea;color:#a34444}.ai{background:#e8edfb;color:#405289}.recording{background:#c84e4e!important}audio{width:100%;margin-top:14px}.meta,.tip{font-size:12px;color:#888;margin-top:8px;line-height:1.6}.progress-wrap{display:none;margin-top:14px}.progress{height:8px;background:#e1e1dc;border-radius:999px;overflow:hidden}.bar{height:100%;width:0;background:#333;transition:.25s}.progress-text{font-size:12px;color:#777;margin-top:6px}.result{display:none;margin-top:18px;padding-top:18px;border-top:1px solid #e5e5df}.score-main{display:flex;align-items:end;gap:6px}.score-main b{font-size:44px}.score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}.score{background:#fff;border:1px solid #e6e6e1;border-radius:14px;padding:12px}.score span{font-size:12px;color:#888}.score strong{display:block;font-size:22px;margin-top:5px}.cefr{display:inline-block;margin-top:12px;background:#eeeef7;padding:6px 10px;border-radius:999px;font-size:13px}.textblock{margin-top:14px;background:#fff;border:1px solid #ecece7;border-radius:14px;padding:14px;white-space:pre-wrap;line-height:1.7}.save-row{display:flex;justify-content:flex-end;margin-top:18px}.history{margin-top:40px}.history h2{font-size:26px}.entries{display:grid;gap:14px}.entry-top{display:flex;justify-content:space-between;gap:12px}.entry-title{font-weight:700}.date{font-size:13px;color:#999}.entry-content{margin-top:12px;white-space:pre-wrap;line-height:1.7}.badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.badge{background:#f1f1ed;border-radius:999px;padding:5px 9px;font-size:12px}.actions{display:flex;gap:8px;margin-top:14px}.empty{padding:28px;text-align:center;color:#999;border:1px dashed #ddd;border-radius:18px}@media(max-width:700px){.grid2,.score-grid{grid-template-columns:1fr}.head h1{font-size:42px}.wrap{width:min(100% - 22px,980px)}}
+*{box-sizing:border-box} body{margin:0;background:#fafaf8;color:#202020;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.container{width:min(1050px,calc(100% - 32px));margin:0 auto;padding:42px 0 80px}
+a{color:inherit;text-decoration:none}.back{display:inline-block;margin-bottom:34px;color:#777;font-size:14px}
+h1{margin:0;font-size:54px;letter-spacing:-2px}.subtitle{margin-top:10px;color:#8b8b84;font-size:15px}.status{margin-top:10px;color:#8b8b84;font-size:13px}
+.panel,.entry{background:#fff;border:1px solid #ecece7;border-radius:24px;box-shadow:0 10px 35px rgba(0,0,0,.035)}
+.panel{margin-top:34px;padding:24px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{margin-bottom:16px}label{display:block;font-size:13px;color:#777;margin-bottom:7px}
+input,textarea{width:100%;border:1px solid #deded8;border-radius:14px;background:#fbfbf9;padding:12px 14px;font:inherit;color:#222;outline:none}
+textarea{min-height:180px;resize:vertical;line-height:1.75}input:focus,textarea:focus{border-color:#999;background:#fff}
+.record-card{margin-top:18px;border:1px solid #e8e8e2;border-radius:18px;padding:18px;background:#f8f8f5}
+.record-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.record-title{font-weight:650}.timer{font-variant-numeric:tabular-nums;color:#777;font-size:14px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}button{border:0;border-radius:999px;padding:10px 16px;font:inherit;cursor:pointer;transition:.18s ease}
+button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}.primary{background:#222;color:#fff}.secondary{background:#ecece7;color:#444}.danger{background:#f8eaea;color:#a04444}
+.recording{background:#c94d4d!important;color:#fff!important}audio{width:100%;margin-top:14px}.audio-meta{margin-top:8px;font-size:13px;color:#888}
+.tip{margin-top:10px;font-size:12px;color:#999;line-height:1.6}.save-row{margin-top:20px;display:flex;justify-content:flex-end}
+.history{margin-top:42px}.history h2{font-size:26px;margin-bottom:16px}.entries{display:grid;gap:14px}.entry{padding:20px}
+.entry-top{display:flex;justify-content:space-between;gap:12px;align-items:start}.entry-title{font-weight:700;font-size:18px}.entry-date{color:#999;font-size:13px}
+.entry-content{margin-top:12px;white-space:pre-wrap;line-height:1.75}.entry audio{margin-top:14px}.audio-info{margin-top:7px;color:#999;font-size:12px}
+.actions{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}.empty{color:#999;padding:30px;text-align:center;border:1px dashed #ddd;border-radius:18px}
+.uploading{margin-top:10px;color:#777;font-size:13px;display:none}
+@media(max-width:750px){h1{font-size:42px}.grid2{grid-template-columns:1fr}.container{width:min(100% - 22px,1050px);padding-top:28px}.panel{padding:18px}}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="container">
 <a class="back" href="index.html">← 返回首页</a>
-<div class="head"><h1>语言学习</h1><div class="sub">记录词汇、表达、口语与每天一点点进步。</div><div id="status" class="status">连接中...</div></div>
+
+<h1>语言学习</h1>
+<div class="subtitle">记录词汇、表达、口语与每天一点点进步。</div>
+<div id="status" class="status">连接中...</div>
+
 <div class="panel">
   <div class="grid2">
-    <div class="field"><label>日期</label><input id="dateInput" type="date"></div>
-    <div class="field"><label>标题</label><input id="titleInput" placeholder="例如：Day 1 · Speaking Practice"></div>
+    <div class="field">
+      <label for="dateInput">日期</label>
+      <input id="dateInput" type="date">
+    </div>
+    <div class="field">
+      <label for="titleInput">标题</label>
+      <input id="titleInput" type="text" placeholder="例如：Day 1 · Speaking Practice">
+    </div>
   </div>
-  <div class="field"><label>学习内容</label><textarea id="contentInput" placeholder="今天背了哪些单词、学了哪些表达、阅读了什么……"></textarea></div>
-  <div class="record">
-    <div class="record-top"><strong>🎙️ Speaking Practice</strong><span id="timer" class="timer">00:00</span></div>
+
+  <div class="field">
+    <label for="contentInput">学习内容</label>
+    <textarea id="contentInput" placeholder="今天背了哪些单词、学了哪些表达、阅读了什么……"></textarea>
+  </div>
+
+  <div class="record-card">
+    <div class="record-head">
+      <div class="record-title">🎙️ Speaking Practice</div>
+      <div id="timer" class="timer">00:00</div>
+    </div>
+
     <div class="row">
       <button id="startBtn" class="primary">● 开始录音</button>
       <button id="stopBtn" class="secondary" disabled>■ 停止</button>
-      <button id="discardBtn" class="danger" disabled>删除录音</button>
-      <button id="evaluateBtn" class="ai" disabled>✨ AI 评测</button>
+      <button id="discardBtn" class="danger" disabled>删除本次录音</button>
     </div>
+
     <audio id="audioPlayer" controls style="display:none"></audio>
-    <div id="audioMeta" class="meta"></div>
-    <div id="progressWrap" class="progress-wrap"><div class="progress"><div id="bar" class="bar"></div></div><div id="progressText" class="progress-text"></div></div>
-    <div id="result" class="result">
-      <div class="score-main"><b id="overallScore">--</b><span>/ 100</span></div>
-      <div class="score-grid">
-        <div class="score"><span>流利度</span><strong id="fluencyScore">--</strong></div>
-        <div class="score"><span>语法</span><strong id="grammarScore">--</strong></div>
-        <div class="score"><span>词汇</span><strong id="vocabularyScore">--</strong></div>
-        <div class="score"><span>发音清晰度</span><strong id="pronunciationScore">--</strong></div>
-      </div>
-      <div id="cefr" class="cefr">CEFR：--</div>
-      <div id="transcript" class="textblock"></div>
-      <div id="feedback" class="textblock"></div>
+    <div id="audioMeta" class="audio-meta"></div>
+    <div id="uploading" class="uploading">正在保存录音，请稍候…</div>
+
+    <div class="tip">
+      点击“保存今日记录”后，录音会上传并保存在你的 Supabase Storage 中。历史记录里的录音可以直接播放，也可以单独删除。
     </div>
-    <div class="tip">录音只用于本次 AI 分析，不长期保存在 Storage。保存的是转写、评分和建议。</div>
   </div>
-  <div class="save-row"><button id="saveBtn" class="primary">保存今日记录</button></div>
+
+  <div class="save-row">
+    <button id="saveBtn" class="primary">保存今日记录</button>
+  </div>
 </div>
-<div class="history"><h2>历史记录</h2><div id="entryList" class="entries"><div class="empty">加载中...</div></div></div>
+
+<div class="history">
+  <h2>历史记录</h2>
+  <div id="entryList" class="entries"><div class="empty">加载中...</div></div>
 </div>
+</div>
+
 <script>
-const SUPABASE_URL="https://kgmhpsoiqnjszkrknqki.supabase.co";
-const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s";
-const sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-const $=id=>document.getElementById(id);
-const dateInput=$("dateInput"),titleInput=$("titleInput"),contentInput=$("contentInput"),startBtn=$("startBtn"),stopBtn=$("stopBtn"),discardBtn=$("discardBtn"),evaluateBtn=$("evaluateBtn"),saveBtn=$("saveBtn"),timer=$("timer"),audioPlayer=$("audioPlayer"),audioMeta=$("audioMeta"),progressWrap=$("progressWrap"),bar=$("bar"),progressText=$("progressText"),result=$("result"),entryList=$("entryList"),statusText=$("status");
-let mediaRecorder=null,stream=null,chunks=[],audioBlob=null,timerId=null,seconds=0;
-let evaluation={transcript:"",overall_score:null,fluency_score:null,grammar_score:null,vocabulary_score:null,pronunciation_score:null,cefr_level:"",feedback:""};
-function today(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
-function esc(t){const d=document.createElement("div");d.textContent=t||"";return d.innerHTML}
-function fmtTime(s){return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`}
-function fmtBytes(n){return n<1024?`${n} B`:n<1048576?`${(n/1024).toFixed(1)} KB`:`${(n/1048576).toFixed(2)} MB`}
-function resetEval(){evaluation={transcript:"",overall_score:null,fluency_score:null,grammar_score:null,vocabulary_score:null,pronunciation_score:null,cefr_level:"",feedback:""};result.style.display="none"}
-function mime(){for(const t of ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4"]){if(MediaRecorder.isTypeSupported(t))return t}return ""}
-function progress(p,t){progressWrap.style.display="block";bar.style.width=p+"%";progressText.textContent=t}
-dateInput.value=today();
-startBtn.onclick=async()=>{try{stream=await navigator.mediaDevices.getUserMedia({audio:true});const m=mime();mediaRecorder=m?new MediaRecorder(stream,{mimeType:m}):new MediaRecorder(stream);chunks=[];audioBlob=null;resetEval();mediaRecorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};mediaRecorder.onstop=()=>{audioBlob=new Blob(chunks,{type:mediaRecorder.mimeType||"audio/webm"});audioPlayer.src=URL.createObjectURL(audioBlob);audioPlayer.style.display="block";audioMeta.textContent=`录音时长 ${fmtTime(seconds)} · ${fmtBytes(audioBlob.size)}`;discardBtn.disabled=false;evaluateBtn.disabled=false;stream.getTracks().forEach(t=>t.stop())};mediaRecorder.start(250);seconds=0;timer.textContent="00:00";timerId=setInterval(()=>timer.textContent=fmtTime(++seconds),1000);startBtn.disabled=true;startBtn.classList.add("recording");startBtn.textContent="● 录音中";stopBtn.disabled=false}catch(e){alert("无法使用麦克风：\n"+e.message)}};
-stopBtn.onclick=()=>{if(mediaRecorder&&mediaRecorder.state!=="inactive")mediaRecorder.stop();clearInterval(timerId);startBtn.disabled=false;startBtn.classList.remove("recording");startBtn.textContent="● 开始录音";stopBtn.disabled=true};
-discardBtn.onclick=()=>{audioBlob=null;audioPlayer.pause();audioPlayer.removeAttribute("src");audioPlayer.style.display="none";audioMeta.textContent="";timer.textContent="00:00";discardBtn.disabled=true;evaluateBtn.disabled=true;resetEval()};
-evaluateBtn.onclick=async()=>{if(!audioBlob)return;evaluateBtn.disabled=true;try{progress(20,"准备录音…");const fd=new FormData();const ext=audioBlob.type.includes("mp4")?"m4a":audioBlob.type.includes("ogg")?"ogg":"webm";fd.append("audio",audioBlob,"speaking."+ext);fd.append("notes",contentInput.value.trim());progress(40,"发送给 AI…");const r=await fetch(`${SUPABASE_URL}/functions/v1/evaluate-speaking`,{method:"POST",headers:{Authorization:`Bearer ${SUPABASE_ANON_KEY}`},body:fd});const data=await r.json();if(!r.ok)throw new Error(data.error||data.message||"AI 评测失败");progress(80,"生成结果…");evaluation={transcript:data.transcript||"",overall_score:data.overall_score??null,fluency_score:data.fluency_score??null,grammar_score:data.grammar_score??null,vocabulary_score:data.vocabulary_score??null,pronunciation_score:data.pronunciation_score??null,cefr_level:data.cefr_level||"",feedback:data.feedback||""};$("overallScore").textContent=evaluation.overall_score??"--";$("fluencyScore").textContent=evaluation.fluency_score??"--";$("grammarScore").textContent=evaluation.grammar_score??"--";$("vocabularyScore").textContent=evaluation.vocabulary_score??"--";$("pronunciationScore").textContent=evaluation.pronunciation_score??"--";$("cefr").textContent="CEFR："+(evaluation.cefr_level||"--");$("transcript").textContent="转写：\n"+(evaluation.transcript||"暂无");$("feedback").textContent=evaluation.feedback||"暂无反馈";result.style.display="block";progress(100,"评测完成 ✓");setTimeout(()=>progressWrap.style.display="none",1500)}catch(e){progress(0,"评测失败");alert("AI 评测失败：\n"+e.message+"\n\n若尚未部署 evaluate-speaking Edge Function，这是正常的。") }finally{evaluateBtn.disabled=false}};
-saveBtn.onclick=async()=>{const row={date:dateInput.value,title:titleInput.value.trim(),content:contentInput.value.trim(),transcript:evaluation.transcript||null,overall_score:evaluation.overall_score,fluency_score:evaluation.fluency_score,grammar_score:evaluation.grammar_score,vocabulary_score:evaluation.vocabulary_score,pronunciation_score:evaluation.pronunciation_score,cefr_level:evaluation.cefr_level||null,feedback:evaluation.feedback||null};if(!row.title&&!row.content&&!row.transcript)return alert("请先写内容或完成一次评测");saveBtn.disabled=true;try{const{error}=await sbClient.from("language_entries").upsert([row],{onConflict:"date"});if(error)throw error;titleInput.value="";contentInput.value="";discardBtn.click();await loadEntries();alert("保存成功") }catch(e){alert("保存失败：\n"+e.message)}finally{saveBtn.disabled=false}};
-async function loadEntries(){try{const{data,error}=await sbClient.from("language_entries").select("*").order("date",{ascending:false});if(error)throw error;statusText.textContent="✅ 已连接";render(data||[])}catch(e){statusText.textContent="❌ 连接失败";entryList.innerHTML=`<div class="empty">${esc(e.message)}</div>`}}
-function render(items){if(!items.length){entryList.innerHTML='<div class="empty">还没有语言学习记录。</div>';return}entryList.innerHTML=items.map(x=>{const b=[["综合",x.overall_score],["流利",x.fluency_score],["语法",x.grammar_score],["词汇",x.vocabulary_score],["发音",x.pronunciation_score]].filter(v=>v[1]!=null).map(v=>`<span class="badge">${v[0]} ${v[1]}</span>`).join("")+(x.cefr_level?`<span class="badge">CEFR ${esc(x.cefr_level)}</span>`:"");return `<div class="entry"><div class="entry-top"><div class="entry-title">${esc(x.title||"语言学习")}</div><div class="date">${esc(x.date)}</div></div>${x.content?`<div class="entry-content">${esc(x.content)}</div>`:""}${b?`<div class="badges">${b}</div>`:""}${x.transcript?`<div class="textblock">转写：<br>${esc(x.transcript)}</div>`:""}${x.feedback?`<div class="textblock">${esc(x.feedback)}</div>`:""}<div class="actions"><button class="danger" onclick="deleteEntry(${x.id})">删除</button></div></div>`}).join("")}
-window.deleteEntry=async id=>{if(!confirm("确定删除吗？"))return;const{error}=await sbClient.from("language_entries").delete().eq("id",id);if(error)return alert(error.message);loadEntries()};
+const SUPABASE_URL = "https://kgmhpsoiqnjszkrknqki.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s";
+const AUDIO_BUCKET = "language-audio";
+
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+
+const dateInput=$("dateInput"), titleInput=$("titleInput"), contentInput=$("contentInput");
+const startBtn=$("startBtn"), stopBtn=$("stopBtn"), discardBtn=$("discardBtn"), saveBtn=$("saveBtn");
+const timer=$("timer"), audioPlayer=$("audioPlayer"), audioMeta=$("audioMeta"), uploading=$("uploading");
+const entryList=$("entryList"), statusText=$("status");
+
+let mediaRecorder=null, stream=null, chunks=[], audioBlob=null, timerId=null, seconds=0;
+
+function todayLocal(){
+  const d=new Date();
+  const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+  return local.toISOString().slice(0,10);
+}
+dateInput.value=todayLocal();
+
+function fmtTime(s){
+  const m=Math.floor(s/60).toString().padStart(2,"0");
+  const x=(s%60).toString().padStart(2,"0");
+  return `${m}:${x}`;
+}
+function fmtBytes(bytes){
+  if(bytes==null) return "";
+  if(bytes<1024) return `${bytes} B`;
+  if(bytes<1024*1024) return `${(bytes/1024).toFixed(1)} KB`;
+  return `${(bytes/1024/1024).toFixed(2)} MB`;
+}
+function esc(v){
+  const d=document.createElement("div");
+  d.textContent=v||"";
+  return d.innerHTML;
+}
+function mimeType(){
+  const list=["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4"];
+  return list.find(x=>MediaRecorder.isTypeSupported(x))||"";
+}
+function resetLocalAudio(){
+  audioBlob=null; chunks=[]; seconds=0;
+  timer.textContent="00:00";
+  audioPlayer.pause();
+  if(audioPlayer.src && audioPlayer.src.startsWith("blob:")) URL.revokeObjectURL(audioPlayer.src);
+  audioPlayer.removeAttribute("src");
+  audioPlayer.load();
+  audioPlayer.style.display="none";
+  audioMeta.textContent="";
+  discardBtn.disabled=true;
+}
+
+startBtn.onclick=async()=>{
+  try{
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error("当前浏览器不支持录音");
+    stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const m=mimeType();
+    mediaRecorder=m?new MediaRecorder(stream,{mimeType:m}):new MediaRecorder(stream);
+    chunks=[];
+    resetLocalAudio();
+
+    mediaRecorder.ondataavailable=e=>{ if(e.data && e.data.size>0) chunks.push(e.data); };
+    mediaRecorder.onstop=()=>{
+      const type=mediaRecorder.mimeType||m||"audio/webm";
+      audioBlob=new Blob(chunks,{type});
+      audioPlayer.src=URL.createObjectURL(audioBlob);
+      audioPlayer.style.display="block";
+      audioMeta.textContent=`录音时长 ${fmtTime(seconds)} · ${fmtBytes(audioBlob.size)}`;
+      discardBtn.disabled=false;
+      if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+    };
+
+    mediaRecorder.start(250);
+    seconds=0;
+    timer.textContent="00:00";
+    timerId=setInterval(()=>timer.textContent=fmtTime(++seconds),1000);
+    startBtn.disabled=true;
+    startBtn.classList.add("recording");
+    startBtn.textContent="● 录音中";
+    stopBtn.disabled=false;
+  }catch(e){
+    alert("无法使用麦克风：\n"+e.message);
+  }
+};
+
+stopBtn.onclick=()=>{
+  if(mediaRecorder && mediaRecorder.state!=="inactive") mediaRecorder.stop();
+  clearInterval(timerId);
+  startBtn.disabled=false;
+  startBtn.classList.remove("recording");
+  startBtn.textContent="● 开始录音";
+  stopBtn.disabled=true;
+};
+
+discardBtn.onclick=()=>resetLocalAudio();
+
+async function uploadAudio(blob){
+  const ext=blob.type.includes("mp4")?"m4a":blob.type.includes("ogg")?"ogg":"webm";
+  const path=`${dateInput.value}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+
+  const {error}=await sbClient.storage.from(AUDIO_BUCKET).upload(path,blob,{
+    contentType:blob.type||"audio/webm",
+    cacheControl:"3600",
+    upsert:false
+  });
+  if(error) throw error;
+
+  const {data}=sbClient.storage.from(AUDIO_BUCKET).getPublicUrl(path);
+  return {path,url:data.publicUrl};
+}
+
+saveBtn.onclick=async()=>{
+  const date=dateInput.value;
+  const title=titleInput.value.trim();
+  const content=contentInput.value.trim();
+
+  if(!date) return alert("请选择日期。");
+  if(!title && !content && !audioBlob) return alert("请先写一点内容或录一段音频。");
+
+  saveBtn.disabled=true;
+  uploading.style.display=audioBlob?"block":"none";
+
+  let newAudio=null;
+  try{
+    const {data:oldRow,error:oldErr}=await sbClient
+      .from("language_entries")
+      .select("id,audio_path,audio_url,audio_name,audio_type,audio_size,duration_seconds")
+      .eq("date",date)
+      .maybeSingle();
+    if(oldErr) throw oldErr;
+
+    if(audioBlob) newAudio=await uploadAudio(audioBlob);
+
+    const row={
+      date,
+      title,
+      content,
+      audio_url:newAudio ? newAudio.url : (oldRow?.audio_url || null),
+      audio_path:newAudio ? newAudio.path : (oldRow?.audio_path || null),
+      audio_name:newAudio ? `speaking-${date}.${audioBlob.type.includes("mp4")?"m4a":audioBlob.type.includes("ogg")?"ogg":"webm"}` : (oldRow?.audio_name || null),
+      audio_type:newAudio ? audioBlob.type : (oldRow?.audio_type || null),
+      audio_size:newAudio ? audioBlob.size : (oldRow?.audio_size || null),
+      duration_seconds:newAudio ? seconds : (oldRow?.duration_seconds || null)
+    };
+
+    const {error}=await sbClient.from("language_entries").upsert([row],{onConflict:"date"});
+    if(error) throw error;
+
+    if(newAudio && oldRow?.audio_path && oldRow.audio_path!==newAudio.path){
+      await sbClient.storage.from(AUDIO_BUCKET).remove([oldRow.audio_path]);
+    }
+
+    titleInput.value="";
+    contentInput.value="";
+    resetLocalAudio();
+    await loadEntries();
+    alert("保存成功。");
+  }catch(e){
+    if(newAudio?.path) await sbClient.storage.from(AUDIO_BUCKET).remove([newAudio.path]);
+    alert("保存失败：\n"+e.message);
+  }finally{
+    uploading.style.display="none";
+    saveBtn.disabled=false;
+  }
+};
+
+async function loadEntries(){
+  try{
+    const {data,error}=await sbClient.from("language_entries").select("*").order("date",{ascending:false});
+    if(error) throw error;
+    statusText.textContent="✅ 已连接";
+    renderEntries(data||[]);
+  }catch(e){
+    statusText.textContent="❌ 连接失败";
+    entryList.innerHTML=`<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+
+function renderEntries(items){
+  if(!items.length){
+    entryList.innerHTML='<div class="empty">还没有语言学习记录。</div>';
+    return;
+  }
+
+  entryList.innerHTML=items.map(x=>`
+    <div class="entry">
+      <div class="entry-top">
+        <div class="entry-title">${esc(x.title||"语言学习")}</div>
+        <div class="entry-date">${esc(x.date||"")}</div>
+      </div>
+
+      ${x.content?`<div class="entry-content">${esc(x.content)}</div>`:""}
+
+      ${x.audio_url?`
+        <audio controls preload="metadata" src="${esc(x.audio_url)}"></audio>
+        <div class="audio-info">
+          ${x.duration_seconds!=null?`时长 ${fmtTime(Number(x.duration_seconds))}`:""}
+          ${x.audio_size!=null?` · ${fmtBytes(Number(x.audio_size))}`:""}
+        </div>
+      `:""}
+
+      <div class="actions">
+        <button class="secondary" onclick="editEntry(${x.id})">编辑文字</button>
+        ${x.audio_url?`<a class="secondary" style="display:inline-flex;align-items:center;border-radius:999px;padding:10px 16px" href="${esc(x.audio_url)}" download="${esc(x.audio_name || ('speaking-' + (x.date || 'recording') + '.webm'))}" target="_blank" rel="noopener">下载录音</a>`:""}
+        ${x.audio_path?`<button class="danger" onclick='deleteAudio(${x.id},${JSON.stringify(x.audio_path)})'>删除录音</button>`:""}
+        <button class="danger" onclick="deleteEntry(${x.id})">删除整条记录</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+window.editEntry=async id=>{
+  const {data,error}=await sbClient.from("language_entries").select("*").eq("id",id).single();
+  if(error) return alert("读取失败：\n"+error.message);
+  dateInput.value=data.date||todayLocal();
+  titleInput.value=data.title||"";
+  contentInput.value=data.content||"";
+  resetLocalAudio();
+  window.scrollTo({top:0,behavior:"smooth"});
+};
+
+window.deleteAudio=async(id,path)=>{
+  if(!confirm("确定删除这段录音吗？文字记录会保留。")) return;
+
+  const {error:storageError}=await sbClient.storage.from(AUDIO_BUCKET).remove([path]);
+  if(storageError) return alert("删除录音文件失败：\n"+storageError.message);
+
+  const {error:dbError}=await sbClient
+    .from("language_entries")
+    .update({
+      audio_url:null,audio_path:null,audio_name:null,
+      audio_type:null,audio_size:null,duration_seconds:null
+    })
+    .eq("id",id);
+
+  if(dbError) return alert("更新记录失败：\n"+dbError.message);
+  await loadEntries();
+};
+
+window.deleteEntry=async id=>{
+  if(!confirm("确定删除整条语言学习记录吗？")) return;
+
+  const {data,error:readError}=await sbClient
+    .from("language_entries")
+    .select("audio_path")
+    .eq("id",id)
+    .single();
+
+  if(readError) return alert(readError.message);
+
+  if(data?.audio_path){
+    const {error:storageError}=await sbClient.storage.from(AUDIO_BUCKET).remove([data.audio_path]);
+    if(storageError) return alert("删除录音文件失败：\n"+storageError.message);
+  }
+
+  const {error}=await sbClient.from("language_entries").delete().eq("id",id);
+  if(error) return alert("删除记录失败：\n"+error.message);
+  await loadEntries();
+};
+
 loadEntries();
 </script>
 </body>
