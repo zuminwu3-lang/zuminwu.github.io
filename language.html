@@ -45,6 +45,17 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
 .reader-controls select{border:1px solid #deded8;border-radius:999px;background:#fff;padding:9px 12px;color:#444}
 .reader-status{margin-top:8px;font-size:12px;color:#888}
 .reading-active{background:#222!important;color:#fff!important}
+
+.vocab-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:9999;padding:28px}
+.vocab-panel{max-width:900px;height:min(82vh,760px);margin:auto;background:#fff;border-radius:22px;padding:22px;display:flex;flex-direction:column;box-shadow:0 24px 70px rgba(0,0,0,.2)}
+.vocab-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.vocab-tools{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.vocab-tools input{flex:1;min-width:180px}
+.vocab-list{overflow:auto;border-top:1px solid #eee}
+.vocab-row{display:grid;grid-template-columns:56px 1fr 1.5fr 100px;gap:12px;padding:11px 4px;border-bottom:1px solid #eee;align-items:start}
+.vocab-word{font-weight:700}
+.vocab-meta{font-size:12px;color:#888}
+@media(max-width:650px){.vocab-modal{padding:10px}.vocab-row{grid-template-columns:38px 1fr}.vocab-meaning{grid-column:2}.vocab-meta{grid-column:2}}
 </style>
 </head>
 <body>
@@ -102,6 +113,7 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
       <input id="wordFileInput" type="file" accept=".txt,.csv,text/plain,text/csv" style="max-width:430px;background:#fff">
       <button id="uploadWordsBtn" class="primary" type="button">上传今日单词</button>
       <button id="refreshWordsBtn" class="secondary" type="button">刷新词库</button>
+      <button id="viewVocabularyBtn" class="secondary" type="button">📚 查看总词库</button>
     </div>
     <div id="uploadWordStatus" class="tip">支持 TXT / CSV；每行推荐：derive, 推导；得到。重复单词自动更新，不重复计数。</div>
     <div class="row" style="margin-top:16px">
@@ -434,6 +446,52 @@ window.deleteEntry=async id=>{
 
 
 
+
+// ===== 总词库查看器 =====
+const vocabularyModal=$("vocabularyModal"),viewVocabularyBtn=$("viewVocabularyBtn"),
+closeVocabularyBtn=$("closeVocabularyBtn"),vocabularySearch=$("vocabularySearch"),
+vocabularySort=$("vocabularySort"),vocabularyList=$("vocabularyList"),
+vocabularySummary=$("vocabularySummary");
+let VocabularyCache=[];
+
+async function loadVocabularyViewer(){
+  vocabularyList.innerHTML='<div style="padding:20px">正在读取总词库…</div>';
+  vocabularyModal.style.display="flex";
+  const {data,error}=await sbClient.from("vocabulary").select("*").order("id",{ascending:false}).limit(5000);
+  if(error){
+    vocabularyList.innerHTML=`<div style="padding:20px">读取失败：${esc(error.message)}</div>`;
+    return;
+  }
+  VocabularyCache=data||[];
+  renderVocabularyViewer();
+}
+function renderVocabularyViewer(){
+  let q=(vocabularySearch.value||"").trim().toLowerCase();
+  let rows=VocabularyCache.filter(x=>!q ||
+    (x.word||"").toLowerCase().includes(q) ||
+    (x.meaning||"").toLowerCase().includes(q));
+  if(vocabularySort.value==="az") rows.sort((a,b)=>(a.word||"").localeCompare(b.word||"","en"));
+  if(vocabularySort.value==="wrong") rows.sort((a,b)=>(+b.wrong_count||0)-(+a.wrong_count||0));
+  if(vocabularySort.value==="tested") rows.sort((a,b)=>(+b.dictation_count||0)-(+a.dictation_count||0));
+  if(vocabularySort.value==="newest") rows.sort((a,b)=>(+b.id||0)-(+a.id||0));
+  vocabularySummary.textContent=`总计 ${VocabularyCache.length} 个单词${q?` · 搜索到 ${rows.length} 个`:""}`;
+  vocabularyList.innerHTML=rows.length?rows.map((x,i)=>`
+    <div class="vocab-row">
+      <div class="vocab-meta">${i+1}</div>
+      <div>
+        <div class="vocab-word">${esc(x.word||"")}</div>
+        <div class="vocab-meta">${esc(x.added_date||"")}</div>
+      </div>
+      <div class="vocab-meaning">${esc(x.meaning||"—")}</div>
+      <div class="vocab-meta">测试 ${+x.dictation_count||0}<br>错 ${+x.wrong_count||0}</div>
+    </div>`).join(""):'<div style="padding:20px">没有找到匹配的单词。</div>';
+}
+viewVocabularyBtn.onclick=loadVocabularyViewer;
+closeVocabularyBtn.onclick=()=>vocabularyModal.style.display="none";
+vocabularyModal.onclick=e=>{if(e.target===vocabularyModal)vocabularyModal.style.display="none"};
+vocabularySearch.oninput=renderVocabularyViewer;
+vocabularySort.onchange=renderVocabularyViewer;
+
 // ===== 英文文章朗读 =====
 const readArticleBtn=$("readArticleBtn"),pauseArticleBtn=$("pauseArticleBtn"),
 resumeArticleBtn=$("resumeArticleBtn"),stopArticleBtn=$("stopArticleBtn"),
@@ -657,5 +715,28 @@ refreshCount();
 
 loadEntries();
 </script>
+
+<div id="vocabularyModal" class="vocab-modal">
+  <div class="vocab-panel">
+    <div class="vocab-head">
+      <div>
+        <h2 style="margin:0">总词库</h2>
+        <div id="vocabularySummary" class="muted" style="margin-top:5px">正在读取…</div>
+      </div>
+      <button id="closeVocabularyBtn" class="secondary" type="button">✕ 关闭</button>
+    </div>
+    <div class="vocab-tools">
+      <input id="vocabularySearch" type="text" placeholder="搜索单词或中文释义…">
+      <select id="vocabularySort" style="border:1px solid #deded8;border-radius:14px;background:#fff;padding:10px 14px">
+        <option value="newest">最近添加</option>
+        <option value="az">A → Z</option>
+        <option value="wrong">错误最多</option>
+        <option value="tested">测试最多</option>
+      </select>
+    </div>
+    <div id="vocabularyList" class="vocab-list"></div>
+  </div>
+</div>
+
 </body>
 </html>
