@@ -191,6 +191,8 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
     </div>
     <div class="vocab-tools">
       <input id="vocabularySearch" type="text" placeholder="搜索单词或中文释义…">
+      <button id="readVocabularyBtn" class="primary" type="button">▶ 连续朗读</button>
+      <button id="stopVocabularyBtn" class="secondary" type="button" disabled>■ 停止朗读</button>
       <select id="vocabularySort" style="border:1px solid #deded8;border-radius:14px;background:#fff;padding:10px 14px">
         <option value="newest">最近添加</option>
         <option value="az">A → Z</option>
@@ -475,6 +477,68 @@ closeVocabularyBtn=$("closeVocabularyBtn"),vocabularySearch=$("vocabularySearch"
 vocabularySort=$("vocabularySort"),vocabularyList=$("vocabularyList"),
 vocabularySummary=$("vocabularySummary");
 let VocabularyCache=[];
+let VocabularyReading=false,VocabularyReadRows=[],VocabularyReadIndex=0;
+
+function vocabularyVoice(){
+  const lang=(typeof articleAccent!=="undefined" && articleAccent?.value) ? articleAccent.value : "en-US";
+  const voices=speechSynthesis.getVoices();
+  return {
+    lang,
+    voice:voices.find(v=>v.lang===lang) ||
+          voices.find(v=>v.lang && v.lang.toLowerCase().startsWith(lang.slice(0,2).toLowerCase()))
+  };
+}
+window.speakVocabularyWord=word=>{
+  if(!word)return;
+  stopVocabularyReading(false);
+  const {lang,voice}=vocabularyVoice();
+  const u=new SpeechSynthesisUtterance(word);
+  u.lang=lang;u.rate=.82;if(voice)u.voice=voice;
+  speechSynthesis.speak(u);
+};
+function currentVocabularyRows(){
+  let q=(vocabularySearch.value||"").trim().toLowerCase();
+  let rows=VocabularyCache.filter(x=>!q ||
+    (x.word||"").toLowerCase().includes(q) ||
+    (x.meaning||"").toLowerCase().includes(q));
+  if(vocabularySort.value==="az") rows.sort((a,b)=>(a.word||"").localeCompare(b.word||"","en"));
+  if(vocabularySort.value==="wrong") rows.sort((a,b)=>(+b.wrong_count||0)-(+a.wrong_count||0));
+  if(vocabularySort.value==="tested") rows.sort((a,b)=>(+b.dictation_count||0)-(+a.dictation_count||0));
+  if(vocabularySort.value==="newest") rows.sort((a,b)=>(+b.id||0)-(+a.id||0));
+  return rows;
+}
+function stopVocabularyReading(update=true){
+  VocabularyReading=false;VocabularyReadRows=[];VocabularyReadIndex=0;
+  speechSynthesis.cancel();
+  const rb=$("readVocabularyBtn"),sb=$("stopVocabularyBtn");
+  if(rb){rb.disabled=false;rb.textContent="▶ 连续朗读"}
+  if(sb)sb.disabled=true;
+  if(update && vocabularySummary) vocabularySummary.textContent=`总计 ${VocabularyCache.length} 个单词`;
+}
+function speakNextVocabulary(){
+  if(!VocabularyReading || VocabularyReadIndex>=VocabularyReadRows.length){
+    if(VocabularyReading) stopVocabularyReading();
+    return;
+  }
+  const item=VocabularyReadRows[VocabularyReadIndex];
+  const {lang,voice}=vocabularyVoice();
+  const u=new SpeechSynthesisUtterance(item.word||"");
+  u.lang=lang;u.rate=.82;if(voice)u.voice=voice;
+  vocabularySummary.textContent=`连续朗读 ${VocabularyReadIndex+1} / ${VocabularyReadRows.length} · ${item.word||""}`;
+  u.onend=()=>{
+    if(!VocabularyReading)return;
+    VocabularyReadIndex++;
+    setTimeout(speakNextVocabulary,450);
+  };
+  u.onerror=e=>{
+    if(e.error!=="canceled"&&e.error!=="interrupted"){
+      VocabularyReadIndex++;
+      setTimeout(speakNextVocabulary,300);
+    }
+  };
+  speechSynthesis.speak(u);
+}
+
 
 async function loadVocabularyViewer(){
   vocabularyList.innerHTML='<div style="padding:20px">正在读取总词库…</div>';
@@ -505,7 +569,7 @@ function renderVocabularyViewer(){
         <div class="vocab-meta">${esc(x.added_date||"")}</div>
       </div>
       <div class="vocab-meaning">${esc(x.meaning||"—")}</div>
-      <div class="vocab-meta">测试 ${+x.dictation_count||0}<br>错 ${+x.wrong_count||0}</div>
+      <div class="vocab-meta">测试 ${+x.dictation_count||0}<br>错 ${+x.wrong_count||0}<br><button class="secondary" type="button" style="margin-top:6px;padding:6px 10px" onclick='speakVocabularyWord(${JSON.stringify(x.word||"")})'>🔊</button></div>
     </div>`).join(""):'<div style="padding:20px">没有找到匹配的单词。</div>';
 }
 viewVocabularyBtn.onclick=loadVocabularyViewer;
@@ -513,6 +577,18 @@ closeVocabularyBtn.onclick=()=>vocabularyModal.style.display="none";
 vocabularyModal.onclick=e=>{if(e.target===vocabularyModal)vocabularyModal.style.display="none"};
 vocabularySearch.oninput=renderVocabularyViewer;
 vocabularySort.onchange=renderVocabularyViewer;
+$("readVocabularyBtn").onclick=()=>{
+  speechSynthesis.cancel();
+  VocabularyReadRows=currentVocabularyRows();
+  if(!VocabularyReadRows.length)return alert("当前没有可朗读的单词。");
+  VocabularyReading=true;VocabularyReadIndex=0;
+  $("readVocabularyBtn").disabled=true;
+  $("readVocabularyBtn").textContent="▶ 朗读中";
+  $("stopVocabularyBtn").disabled=false;
+  speakNextVocabulary();
+};
+$("stopVocabularyBtn").onclick=()=>stopVocabularyReading();
+
 
 // ===== 英文文章朗读 =====
 const readArticleBtn=$("readArticleBtn"),pauseArticleBtn=$("pauseArticleBtn"),
