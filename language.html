@@ -76,17 +76,26 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
     </div>
     <div id="uploadWordStatus" class="tip">支持 TXT / CSV；每行推荐：derive, 推导；得到。重复单词自动更新，不重复计数。</div>
     <div class="row" style="margin-top:16px">
+      <select id="questionType" style="border:1px solid #deded8;border-radius:14px;background:#fff;padding:10px 14px">
+        <option value="audio">🔊 听音 → 写单词</option>
+        <option value="meaning_word">🇨🇳 意思 → 写单词</option>
+        <option value="word_meaning">🇬🇧 单词 → 写意思</option>
+        <option value="mixed">🔀 随机混合</option>
+      </select>
       <select id="dictationMode" style="border:1px solid #deded8;border-radius:14px;background:#fff;padding:10px 14px">
-        <option value="today">今日单词</option><option value="random">总词库随机</option>
-        <option value="wrong">历史错词</option><option value="smart">智能复习</option>
+        <option value="today">今日单词</option>
+        <option value="random">总词库随机</option>
+        <option value="wrong">历史错词</option>
+        <option value="smart">智能复习</option>
       </select>
       <input id="drawCount" type="number" min="1" value="50" style="width:110px">
-      <button id="startDictationBtn" class="primary" type="button">开始听写</button>
+      <button id="startDictationBtn" class="primary" type="button">开始测试</button>
     </div>
     <div id="dictationArea" class="dictation-area">
       <div class="dictation-progress"><span id="dictationProgress">0 / 0</span><span id="dictationScore">正确 0 · 错误 0</span></div>
-      <div style="text-align:center"><button id="speakWordBtn" class="primary">🔊 播放单词</button></div>
-      <input id="dictationInput" class="dictation-input" type="text" autocomplete="off" spellcheck="false" placeholder="听到什么就输入什么，按 Enter 提交" style="margin-top:14px">
+      <div id="questionPrompt" style="text-align:center;font-size:24px;font-weight:700;line-height:1.6;min-height:46px;margin-bottom:10px"></div>
+      <div id="audioQuestionBox" style="text-align:center"><button id="speakWordBtn" class="primary">🔊 播放单词</button></div>
+      <input id="dictationInput" class="dictation-input" type="text" autocomplete="off" spellcheck="false" placeholder="输入答案，按 Enter 提交" style="margin-top:14px">
       <div id="dictationFeedback" class="dictation-feedback"></div>
       <div class="row" style="justify-content:center">
         <button id="replayBtn" class="secondary">重新播放</button><button id="showAnswerBtn" class="secondary">显示答案</button><button id="nextWordBtn" class="secondary">下一个</button>
@@ -394,12 +403,14 @@ window.deleteEntry=async id=>{
 
 
 
-// ===== Supabase 永久总词库 / 听写 =====
+// ===== Supabase 永久总词库 / 双向测试 =====
 const WF=$("wordFileInput"),UW=$("uploadWordsBtn"),RW=$("refreshWordsBtn"),WC=$("wordCount"),US=$("uploadWordStatus"),
-DM=$("dictationMode"),DC=$("drawCount"),SD=$("startDictationBtn"),DA=$("dictationArea"),DP=$("dictationProgress"),
-DS=$("dictationScore"),DI=$("dictationInput"),DF=$("dictationFeedback"),ST=$("statTotal"),SN=$("statDone"),
+QT=$("questionType"),DM=$("dictationMode"),DC=$("drawCount"),SD=$("startDictationBtn"),DA=$("dictationArea"),
+DP=$("dictationProgress"),DS=$("dictationScore"),DI=$("dictationInput"),DF=$("dictationFeedback"),
+QP=$("questionPrompt"),AQ=$("audioQuestionBox"),ST=$("statTotal"),SN=$("statDone"),
 SC=$("statCorrect"),SA=$("statAccuracy"),WL=$("wrongList");
-let DWords=[],DIndex=0,Correct=0,Wrongs=[],Answered=false,Results=[],SessionSaved=false;
+
+let DWords=[],DIndex=0,Correct=0,Wrongs=[],Answered=false,Results=[],SessionSaved=false,CurrentType="audio";
 
 function parseWords(raw){
  const m=new Map();
@@ -427,12 +438,37 @@ UW.onclick=async()=>{
   const {error}=await sbClient.from("vocabulary").upsert(rows,{onConflict:"word_lower"});if(error)throw error;
   const added=rows.filter(x=>!existed.has(x.word_lower)).length;
   US.textContent=`✓ 本次 ${rows.length} 词：新增 ${added}，重复/更新 ${rows.length-added}`;WF.value="";await refreshCount();
- }catch(e){US.textContent="上传失败："+e.message;alert("上传失败：\n"+e.message);}finally{UW.disabled=false;}
+ }catch(e){US.textContent="上传失败："+e.message;alert("上传失败：\n"+e.message)}finally{UW.disabled=false}
 };
-function shuffle(a){a=[...a];for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function shuffle(a){a=[...a];for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function cur(){return DWords[DIndex]}
-function speak(){if(!cur())return;speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(cur().word);u.lang="en-US";u.rate=.82;speechSynthesis.speak(u)}
-function updateD(){let done=Results.length,total=DWords.length;DP.textContent=total?`${Math.min(DIndex+1,total)} / ${total}`:"0 / 0";DS.textContent=`正确 ${Correct} · 错误 ${Wrongs.length}`;ST.textContent=total;SN.textContent=done;SC.textContent=Correct;SA.textContent=done?Math.round(Correct/done*100)+"%":"0%";WL.innerHTML=Wrongs.length?"<b>本次错词：</b> "+Wrongs.map(x=>esc(x.word)).join("、"):""}
+function chooseType(){
+ if(QT.value!=="mixed")return QT.value;
+ return ["audio","meaning_word","word_meaning"][Math.floor(Math.random()*3)];
+}
+function speak(){
+ if(!cur()||CurrentType!=="audio")return;
+ speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(cur().word);u.lang="en-US";u.rate=.82;speechSynthesis.speak(u);
+}
+function renderQuestion(){
+ if(!cur())return;
+ CurrentType=chooseType();DF.textContent="";DI.value="";
+ if(CurrentType==="audio"){
+  QP.textContent="听发音，写出单词";AQ.style.display="block";DI.placeholder="输入英文单词，按 Enter 提交";setTimeout(speak,220);
+ }else if(CurrentType==="meaning_word"){
+  QP.textContent=cur().meaning||"（该词暂无中文释义）";AQ.style.display="none";DI.placeholder="根据意思写出英文单词，按 Enter 提交";
+ }else{
+  QP.textContent=cur().word;AQ.style.display="none";DI.placeholder="写出中文意思，按 Enter 提交";
+ }
+ DI.focus();
+}
+function updateD(){
+ let done=Results.length,total=DWords.length;DP.textContent=total?`${Math.min(DIndex+1,total)} / ${total}`:"0 / 0";
+ DS.textContent=`正确 ${Correct} · 错误 ${Wrongs.length}`;ST.textContent=total;SN.textContent=done;SC.textContent=Correct;
+ SA.textContent=done?Math.round(Correct/done*100)+"%":"0%";
+ WL.innerHTML=Wrongs.length?"<b>本次错词：</b> "+Wrongs.map(x=>esc(x.word)).join("、"):"";
+}
 async function pool(){
  let q=sbClient.from("vocabulary").select("*"),mode=DM.value;
  if(mode==="today")q=q.eq("added_date",dateInput.value||todayLocal());
@@ -443,24 +479,58 @@ async function pool(){
  if(mode==="smart")p=p.map(x=>({x,s:(+x.wrong_count||0)*3-(+x.correct_count||0)*.15+Math.random()*2})).sort((a,b)=>b.s-a.s).map(o=>o.x);
  return p.slice(0,Math.max(1,parseInt(DC.value)||50));
 }
-SD.onclick=async()=>{try{SD.disabled=true;DWords=await pool();if(!DWords.length)return alert("这个模式下暂无可听写单词。");DIndex=0;Correct=0;Wrongs=[];Results=[];Answered=false;SessionSaved=false;DA.style.display="block";DI.value="";DF.textContent="";updateD();DI.focus();setTimeout(speak,250)}catch(e){alert("读取词库失败：\n"+e.message)}finally{SD.disabled=false}};
-$("speakWordBtn").onclick=speak;$("replayBtn").onclick=speak;
+function normalizeMeaning(s){
+ return (s||"").toLowerCase().replace(/[（(][^）)]*[）)]/g,"").replace(/\s+/g,"").replace(/[。.!！?？]/g,"");
+}
+function meaningParts(s){
+ return normalizeMeaning(s).split(/[;,；，、/|]/).map(x=>x.trim()).filter(x=>x.length>=1);
+}
+function checkMeaningAnswer(typed,answer){
+ const t=normalizeMeaning(typed);if(!t)return false;
+ const expected=meaningParts(answer),given=meaningParts(typed);
+ if(!expected.length)return false;
+ // 任一有效释义互相包含即可，避免要求标点/顺序完全一致。
+ return given.some(g=>expected.some(e=>g===e || (g.length>=2&&e.includes(g)) || (e.length>=2&&g.includes(e))));
+}
+SD.onclick=async()=>{
+ try{
+  SD.disabled=true;DWords=await pool();if(!DWords.length)return alert("这个范围下暂无可测试单词。");
+  DIndex=0;Correct=0;Wrongs=[];Results=[];Answered=false;SessionSaved=false;DA.style.display="block";updateD();renderQuestion();
+ }catch(e){alert("读取词库失败：\n"+e.message)}finally{SD.disabled=false}
+};
+$("speakWordBtn").onclick=speak;$("replayBtn").onclick=()=>{if(CurrentType==="audio")speak();else renderQuestion()};
 async function answer(forceWrong=false){
  if(Answered||!cur())return;let typed=DI.value.trim();if(!typed&&!forceWrong)return;
- Answered=true;let ok=!forceWrong&&typed.toLowerCase()===cur().word.trim().toLowerCase();
- if(ok){Correct++;DF.textContent="✓ 正确"}else{Wrongs.push(cur());DF.textContent=`✗ ${cur().word}${cur().meaning?" · "+cur().meaning:""}`}
- const {error}=await sbClient.rpc("record_dictation_result",{p_word_id:cur().id,p_correct:ok});if(error)console.error(error);
- Results.push({id:cur().id,ok});updateD();
+ Answered=true;let ok=false;
+ if(!forceWrong){
+  if(CurrentType==="word_meaning")ok=checkMeaningAnswer(typed,cur().meaning);
+  else ok=typed.toLowerCase()===cur().word.trim().toLowerCase();
+ }
+ if(ok){Correct++;DF.textContent="✓ 正确"}
+ else{Wrongs.push(cur());DF.textContent=`✗ 正确答案：${CurrentType==="word_meaning"?(cur().meaning||"暂无释义"):cur().word}${CurrentType!=="word_meaning"&&cur().meaning?" · "+cur().meaning:""}`}
+ const {error}=await sbClient.rpc("record_dictation_result",{p_word_id:cur().id,p_correct:ok,p_question_type:CurrentType});
+ if(error)console.error("统计更新失败",error);
+ Results.push({id:cur().id,ok,type:CurrentType});updateD();
 }
 async function finish(){
  if(SessionSaved)return;SessionSaved=true;let total=Results.length;
- const {error}=await sbClient.from("dictation_sessions").insert([{session_date:dateInput.value||todayLocal(),mode:DM.value,total_words:total,correct_words:Correct,wrong_words:Wrongs.length}]);
- if(error)console.error(error);DF.textContent=`听写完成：${Correct}/${total}，正确率 ${total?Math.round(Correct/total*100):0}%`;
+ const {error}=await sbClient.from("dictation_sessions").insert([{
+  session_date:dateInput.value||todayLocal(),mode:DM.value,question_type:QT.value,total_words:total,correct_words:Correct,wrong_words:Wrongs.length
+ }]);if(error)console.error("场次保存失败",error);
+ DF.textContent=`测试完成：${Correct}/${total}，正确率 ${total?Math.round(Correct/total*100):0}%`;
 }
-async function next(){if(!Answered){await answer();return}if(DIndex>=DWords.length-1){await finish();return}DIndex++;Answered=false;DI.value="";DF.textContent="";updateD();DI.focus();setTimeout(speak,180)}
+async function next(){
+ if(!Answered){await answer();return}
+ if(DIndex>=DWords.length-1){await finish();return}
+ DIndex++;Answered=false;updateD();renderQuestion();
+}
 DI.onkeydown=async e=>{if(e.key==="Enter"){e.preventDefault();Answered?await next():await answer()}};
-$("showAnswerBtn").onclick=async()=>{if(!cur())return;if(!Answered)await answer(true);DF.textContent=`答案：${cur().word}${cur().meaning?" · "+cur().meaning:""}`};
-$("nextWordBtn").onclick=next;refreshCount();
+$("showAnswerBtn").onclick=async()=>{
+ if(!cur())return;if(!Answered)await answer(true);
+ DF.textContent=`答案：${cur().word}${cur().meaning?" · "+cur().meaning:""}`;
+};
+$("nextWordBtn").onclick=next;
+refreshCount();
 
 loadEntries();
 </script>
