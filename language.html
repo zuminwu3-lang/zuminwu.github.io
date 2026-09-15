@@ -39,6 +39,12 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
 .stat-box{background:#f7f7f4;border-radius:12px;padding:10px;text-align:center}.stat-box b{display:block;font-size:18px}.stat-box span{font-size:11px;color:#888}
 .wrong-list{margin-top:12px;color:#777;font-size:13px;line-height:1.7}
 @media(max-width:600px){.dictation-stats{grid-template-columns:1fr 1fr}}
+
+.article-reader{margin-top:10px;padding:14px;border:1px solid #e8e8e2;border-radius:16px;background:#f8f8f5}
+.reader-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.reader-controls select{border:1px solid #deded8;border-radius:999px;background:#fff;padding:9px 12px;color:#444}
+.reader-status{margin-top:8px;font-size:12px;color:#888}
+.reading-active{background:#222!important;color:#fff!important}
 </style>
 </head>
 <body>
@@ -64,6 +70,29 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
   <div class="field">
     <label for="contentInput">学习内容</label>
     <textarea id="contentInput" placeholder="今天背了哪些单词、学了哪些表达、阅读了什么……"></textarea>
+
+    <div class="article-reader">
+      <div class="reader-controls">
+        <button id="readArticleBtn" class="primary" type="button">🔊 朗读文章</button>
+        <button id="pauseArticleBtn" class="secondary" type="button" disabled>⏸ 暂停</button>
+        <button id="resumeArticleBtn" class="secondary" type="button" disabled>▶ 继续</button>
+        <button id="stopArticleBtn" class="secondary" type="button" disabled>■ 停止</button>
+
+        <select id="articleAccent" title="朗读口音">
+          <option value="en-US">美音</option>
+          <option value="en-GB">英音</option>
+        </select>
+
+        <select id="articleRate" title="朗读速度">
+          <option value="0.75">0.75×</option>
+          <option value="0.9">0.9×</option>
+          <option value="1" selected>1.0×</option>
+          <option value="1.1">1.1×</option>
+          <option value="1.25">1.25×</option>
+        </select>
+      </div>
+      <div id="readerStatus" class="reader-status">把英文文章粘贴到“学习内容”，即可直接朗读。</div>
+    </div>
   </div>
 
 
@@ -344,6 +373,7 @@ function renderEntries(items){
 
       <div class="actions">
         <button class="secondary" onclick="editEntry(${x.id})">编辑文字</button>
+        ${x.content?`<button class="secondary" onclick='readSavedArticle(${JSON.stringify(x.content)})'>🔊 朗读文章</button>`:""}
         ${x.audio_url?`<a class="secondary" style="display:inline-flex;align-items:center;border-radius:999px;padding:10px 16px" href="${esc(x.audio_url)}" download="${esc(x.audio_name || ('speaking-' + (x.date || 'recording') + '.webm'))}" target="_blank" rel="noopener">下载录音</a>`:""}
         ${x.audio_path?`<button class="danger" onclick='deleteAudio(${x.id},${JSON.stringify(x.audio_path)})'>删除录音</button>`:""}
         <button class="danger" onclick="deleteEntry(${x.id})">删除整条记录</button>
@@ -402,6 +432,99 @@ window.deleteEntry=async id=>{
 };
 
 
+
+
+// ===== 英文文章朗读 =====
+const readArticleBtn=$("readArticleBtn"),pauseArticleBtn=$("pauseArticleBtn"),
+resumeArticleBtn=$("resumeArticleBtn"),stopArticleBtn=$("stopArticleBtn"),
+articleAccent=$("articleAccent"),articleRate=$("articleRate"),readerStatus=$("readerStatus");
+
+let articleQueue=[],articleQueueIndex=0,articleReading=false,articlePaused=false;
+
+function stopArticleReading(){
+  speechSynthesis.cancel();
+  articleQueue=[]; articleQueueIndex=0; articleReading=false; articlePaused=false;
+  readArticleBtn.classList.remove("reading-active");
+  readArticleBtn.textContent="🔊 朗读文章";
+  pauseArticleBtn.disabled=true; resumeArticleBtn.disabled=true; stopArticleBtn.disabled=true;
+  readerStatus.textContent="朗读已停止。";
+}
+
+function splitArticle(text){
+  const clean=(text||"").replace(/\s+/g," ").trim();
+  if(!clean) return [];
+  const sentences=clean.match(/[^.!?。！？]+[.!?。！？]?/g)||[clean];
+  const chunks=[]; let buf="";
+  for(const s of sentences){
+    if((buf+" "+s).length>220 && buf){chunks.push(buf.trim());buf=s;}
+    else buf+=(buf?" ":"")+s;
+  }
+  if(buf) chunks.push(buf.trim());
+  return chunks;
+}
+
+function speakNextArticleChunk(){
+  if(!articleReading || articleQueueIndex>=articleQueue.length){
+    if(articleReading){
+      articleReading=false;articlePaused=false;
+      readArticleBtn.classList.remove("reading-active");
+      readArticleBtn.textContent="🔊 重新朗读";
+      pauseArticleBtn.disabled=true;resumeArticleBtn.disabled=true;stopArticleBtn.disabled=true;
+      readerStatus.textContent="✓ 文章朗读完成。";
+    }
+    return;
+  }
+  const u=new SpeechSynthesisUtterance(articleQueue[articleQueueIndex]);
+  u.lang=articleAccent.value;
+  u.rate=Number(articleRate.value)||1;
+  const voices=speechSynthesis.getVoices();
+  const preferred=voices.find(v=>v.lang===articleAccent.value) ||
+                  voices.find(v=>v.lang && v.lang.toLowerCase().startsWith(articleAccent.value.slice(0,2).toLowerCase()));
+  if(preferred) u.voice=preferred;
+  u.onend=()=>{ if(articleReading && !articlePaused){articleQueueIndex++;speakNextArticleChunk();} };
+  u.onerror=e=>{ if(e.error!=="canceled" && e.error!=="interrupted") readerStatus.textContent="朗读出现问题："+e.error; };
+  readerStatus.textContent=`正在朗读 ${articleQueueIndex+1} / ${articleQueue.length} · ${articleAccent.value==="en-GB"?"英音":"美音"} · ${articleRate.value}×`;
+  speechSynthesis.speak(u);
+}
+
+function startArticleReading(text){
+  const chunks=splitArticle(text);
+  if(!chunks.length){alert("请先在“学习内容”里粘贴英文文章。");return;}
+  speechSynthesis.cancel();
+  articleQueue=chunks;articleQueueIndex=0;articleReading=true;articlePaused=false;
+  readArticleBtn.classList.add("reading-active");readArticleBtn.textContent="🔊 朗读中";
+  pauseArticleBtn.disabled=false;resumeArticleBtn.disabled=true;stopArticleBtn.disabled=false;
+  setTimeout(speakNextArticleChunk,80);
+}
+
+readArticleBtn.onclick=()=>startArticleReading(contentInput.value);
+pauseArticleBtn.onclick=()=>{
+  if(!articleReading||speechSynthesis.paused)return;
+  speechSynthesis.pause();articlePaused=true;
+  pauseArticleBtn.disabled=true;resumeArticleBtn.disabled=false;
+  readerStatus.textContent="⏸ 已暂停。";
+};
+resumeArticleBtn.onclick=()=>{
+  if(!articleReading)return;
+  speechSynthesis.resume();articlePaused=false;
+  pauseArticleBtn.disabled=false;resumeArticleBtn.disabled=true;
+  readerStatus.textContent="▶ 继续朗读。";
+};
+stopArticleBtn.onclick=stopArticleReading;
+
+articleAccent.onchange=()=>{
+  if(articleReading){speechSynthesis.cancel();articlePaused=false;setTimeout(speakNextArticleChunk,80);}
+};
+articleRate.onchange=()=>{
+  if(articleReading){speechSynthesis.cancel();articlePaused=false;setTimeout(speakNextArticleChunk,80);}
+};
+
+window.readSavedArticle=text=>{
+  startArticleReading(text);
+  window.scrollTo({top:0,behavior:"smooth"});
+};
+
+window.addEventListener("beforeunload",()=>speechSynthesis.cancel());
 
 // ===== Supabase 永久总词库 / 双向测试 =====
 const WF=$("wordFileInput"),UW=$("uploadWordsBtn"),RW=$("refreshWordsBtn"),WC=$("wordCount"),US=$("uploadWordStatus"),
