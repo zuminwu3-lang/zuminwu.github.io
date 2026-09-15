@@ -180,6 +180,28 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
 </div>
 </div>
 
+<div id="vocabularyModal" class="vocab-modal">
+  <div class="vocab-panel">
+    <div class="vocab-head">
+      <div>
+        <h2 style="margin:0">总词库</h2>
+        <div id="vocabularySummary" class="muted" style="margin-top:5px">正在读取…</div>
+      </div>
+      <button id="closeVocabularyBtn" class="secondary" type="button">✕ 关闭</button>
+    </div>
+    <div class="vocab-tools">
+      <input id="vocabularySearch" type="text" placeholder="搜索单词或中文释义…">
+      <select id="vocabularySort" style="border:1px solid #deded8;border-radius:14px;background:#fff;padding:10px 14px">
+        <option value="newest">最近添加</option>
+        <option value="az">A → Z</option>
+        <option value="wrong">错误最多</option>
+        <option value="tested">测试最多</option>
+      </select>
+    </div>
+    <div id="vocabularyList" class="vocab-list"></div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = "https://kgmhpsoiqnjszkrknqki.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnbWhwc29pcW5qc3prcmtucWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1OTI0MjQsImV4cCI6MjEwNDE2ODQyNH0.fWz688zm6UwQBXjVtx_qSrrTkRJZ_mgh-tuBaRJY73s";
@@ -716,27 +738,7 @@ refreshCount();
 loadEntries();
 </script>
 
-<div id="vocabularyModal" class="vocab-modal">
-  <div class="vocab-panel">
-    <div class="vocab-head">
-      <div>
-        <h2 style="margin:0">总词库</h2>
-        <div id="vocabularySummary" class="muted" style="margin-top:5px">正在读取…</div>
-      </div>
-      <button id="closeVocabularyBtn" class="secondary" type="button">✕ 关闭</button>
-    </div>
-    <div class="vocab-tools">
-      <input id="vocabularySearch" type="text" placeholder="搜索单词或中文释义…">
-      <select id="vocabularySort" style="border:1px solid #deded8;border-radius:14px;background:#fff;padding:10px 14px">
-        <option value="newest">最近添加</option>
-        <option value="az">A → Z</option>
-        <option value="wrong">错误最多</option>
-        <option value="tested">测试最多</option>
-      </select>
-    </div>
-    <div id="vocabularyList" class="vocab-list"></div>
-  </div>
-</div>
+
 
 </body>
 </html>
