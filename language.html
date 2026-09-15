@@ -56,6 +56,79 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
 .vocab-word{font-weight:700}
 .vocab-meta{font-size:12px;color:#888}
 @media(max-width:650px){.vocab-modal{padding:10px}.vocab-row{grid-template-columns:38px 1fr}.vocab-meaning{grid-column:2}.vocab-meta{grid-column:2}}
+
+/* ===== 手机端布局优化 ===== */
+@media (max-width: 700px){
+  body{overflow-x:hidden}
+  .container{width:100%;padding:22px 14px 60px}
+  h1{font-size:38px;letter-spacing:-1px}
+  .panel{margin-top:24px;padding:14px;border-radius:18px}
+  .grid2{grid-template-columns:1fr}
+  textarea{min-height:150px}
+
+  .row,.reader-controls,.vocab-tools{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+    gap:8px;
+  }
+  .row > *, .reader-controls > *, .vocab-tools > *{
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+  }
+  button,select,input{min-height:44px}
+  #drawCount{width:100%!important}
+
+  .dictation-head,.record-head,.entry-top{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .dictation-card,.record-card,.article-reader,.dictation-area{
+    padding:13px;
+    border-radius:15px;
+  }
+  .dictation-input{font-size:18px}
+  #questionPrompt{font-size:21px!important;overflow-wrap:anywhere}
+  .dictation-stats{grid-template-columns:1fr 1fr}
+
+  .save-row{display:block}
+  .save-row button{width:100%}
+  .actions{display:grid;grid-template-columns:1fr 1fr}
+  .actions > *{width:100%;justify-content:center;text-align:center}
+
+  .vocab-modal{padding:0;align-items:stretch}
+  .vocab-panel{
+    width:100%;
+    max-width:none;
+    height:100dvh;
+    max-height:none;
+    margin:0;
+    border-radius:0;
+    padding:16px 14px;
+  }
+  .vocab-head{position:sticky;top:0;background:#fff;z-index:2;padding-bottom:8px}
+  .vocab-tools{margin:8px 0 12px}
+  .vocab-list{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .vocab-row{
+    grid-template-columns:30px minmax(85px,.85fr) minmax(0,1.5fr);
+    gap:8px;
+    padding:12px 2px;
+  }
+  .vocab-row > .vocab-meta:last-child{
+    grid-column:2 / 4;
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  .vocab-meaning{grid-column:auto;overflow-wrap:anywhere}
+}
+@media (max-width: 390px){
+  .actions{grid-template-columns:1fr}
+  .dictation-stats{grid-template-columns:1fr 1fr}
+  h1{font-size:34px}
+}
+
 </style>
 </head>
 <body>
