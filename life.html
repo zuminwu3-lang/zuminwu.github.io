@@ -275,6 +275,11 @@ button:disabled{
 
 }
 
+
+.edit-modal{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.28)}
+.edit-modal.show{display:flex}.edit-dialog{width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border:1px solid #ecece8;border-radius:22px;padding:22px}
+#editContentInput{width:100%;min-height:320px;max-height:60vh;line-height:1.8}.edit-buttons{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}.edit-buttons .cancel{background:#f1f1ed;color:#555}
+@media(max-width:800px){.edit-modal{padding:10px}.edit-dialog{padding:16px}#editContentInput{min-height:55vh}.edit-buttons button{flex:1}}
 </style>
 
 </head>
@@ -357,6 +362,7 @@ button:disabled{
 </div>
 
 
+<div id="editModal" class="edit-modal"><div class="edit-dialog"><h2>修改日常</h2><textarea id="editContentInput"></textarea><div class="edit-buttons"><button id="cancelEditBtn" class="cancel">取消</button><button id="saveEditBtn">保存修改</button></div></div></div>
 <script>
 
 const SUPABASE_URL =
@@ -1043,69 +1049,35 @@ async function publishMoment(){
 }
 
 
-window.editMoment =
-async function(id){
+let editingMomentId=null;
+const editModal=document.getElementById("editModal");
+const editContentInput=document.getElementById("editContentInput");
+const cancelEditBtn=document.getElementById("cancelEditBtn");
+const saveEditBtn=document.getElementById("saveEditBtn");
 
-    const moment =
-    moments.find(
-        item =>
-        item.id === id
-    );
-
-
-    if(!moment)
-        return;
-
-
-    const newContent =
-    prompt(
-        "修改内容：",
-        moment.content || ""
-    );
-
-
-    if(newContent === null)
-        return;
-
-
-    try{
-
-        const {
-            error
-        } =
-        await sbClient
-        .from("moments")
-        .update({
-            content:
-            newContent.trim()
-        })
-        .eq(
-            "id",
-            id
-        );
-
-
-        if(error)
-            throw error;
-
-
-        await loadMoments();
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-        alert(
-            "修改失败：\n"
-            +
-            error.message
-        );
-
-    }
-
+window.editMoment=function(id){
+    const moment=moments.find(item=>item.id===id);
+    if(!moment)return;
+    editingMomentId=id;
+    editContentInput.value=moment.content||"";
+    editModal.classList.add("show");
+    setTimeout(()=>{editContentInput.focus();editContentInput.setSelectionRange(editContentInput.value.length,editContentInput.value.length)},0);
 };
+function closeEditModal(){editingMomentId=null;editModal.classList.remove("show")}
+cancelEditBtn.addEventListener("click",closeEditModal);
+editModal.addEventListener("click",e=>{if(e.target===editModal)closeEditModal()});
+saveEditBtn.addEventListener("click",async()=>{
+    if(editingMomentId===null)return;
+    const newContent=editContentInput.value;
+    saveEditBtn.disabled=true;saveEditBtn.textContent="保存中...";
+    try{
+        const {error}=await sbClient.from("moments").update({content:newContent}).eq("id",editingMomentId);
+        if(error)throw error;
+        closeEditModal();
+        await loadMoments();
+    }catch(error){console.error(error);alert("修改失败：\n"+error.message)}
+    finally{saveEditBtn.disabled=false;saveEditBtn.textContent="保存修改"}
+});
 
 
 window.deleteMoment =
