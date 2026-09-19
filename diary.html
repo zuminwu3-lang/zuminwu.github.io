@@ -205,6 +205,16 @@
         font-size: 36px;
       }
     }
+
+    .edit-modal{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.28)}
+    .edit-modal.show{display:flex}
+    .edit-dialog{width:min(700px,100%);background:#fff;border:1px solid #ecece8;border-radius:24px;padding:24px;box-shadow:0 20px 70px rgba(0,0,0,.14)}
+    .edit-dialog h2{font-size:22px;margin-bottom:14px}
+    #editDiaryInput{min-height:360px;max-height:65vh;line-height:1.8}
+    .edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+    .edit-actions button{border:none;border-radius:40px;padding:10px 24px;background:#1e1e1e;color:#fff;cursor:pointer}
+    .edit-actions .cancel{background:#efefeb;color:#555}
+    @media(max-width:520px){.edit-modal{padding:10px}.edit-dialog{padding:18px;border-radius:18px}#editDiaryInput{min-height:58vh}.edit-actions button{flex:1}}
   </style>
 </head>
 
@@ -227,6 +237,17 @@
 
     <div id="diaryList" class="diary-list">
       <div class="loading">⏳ 加载中...</div>
+    </div>
+  </div>
+
+  <div id="editModal" class="edit-modal">
+    <div class="edit-dialog">
+      <h2>修改日记</h2>
+      <textarea id="editDiaryInput" placeholder="修改日记内容……"></textarea>
+      <div class="edit-actions">
+        <button id="cancelEditBtn" class="cancel" type="button">取消</button>
+        <button id="saveEditBtn" type="button">保存修改</button>
+      </div>
     </div>
   </div>
 
@@ -381,36 +402,70 @@
       }
     }
 
-    window.editEntry = async function (id) {
-      const entry = entries.find(item => item.id === id);
+    let editingEntryId = null;
+    const editModal = document.getElementById("editModal");
+    const editDiaryInput = document.getElementById("editDiaryInput");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const saveEditBtn = document.getElementById("saveEditBtn");
 
+    window.editEntry = function (id) {
+      const entry = entries.find(item => item.id === id);
       if (!entry) return;
 
-      const newContent = prompt("修改日记：", entry.task);
+      editingEntryId = id;
+      // 完整载入原日记，不会覆盖或清空原内容。
+      editDiaryInput.value = entry.task || "";
+      editModal.classList.add("show");
 
-      if (newContent === null) return;
+      setTimeout(() => {
+        editDiaryInput.focus();
+        editDiaryInput.setSelectionRange(
+          editDiaryInput.value.length,
+          editDiaryInput.value.length
+        );
+      }, 0);
+    };
 
+    function closeEditModal() {
+      editingEntryId = null;
+      editModal.classList.remove("show");
+    }
+
+    cancelEditBtn.addEventListener("click", closeEditModal);
+    editModal.addEventListener("click", event => {
+      if (event.target === editModal) closeEditModal();
+    });
+
+    saveEditBtn.addEventListener("click", async () => {
+      if (editingEntryId === null) return;
+
+      const newContent = editDiaryInput.value;
       if (!newContent.trim()) {
         alert("日记内容不能为空。");
         return;
       }
 
+      saveEditBtn.disabled = true;
+      saveEditBtn.textContent = "保存中...";
+
       try {
         const { error } = await sbClient
           .from("todos")
-          .update({
-            task: newContent.trim()
-          })
-          .eq("id", id);
+          .update({ task: newContent.trim() })
+          .eq("id", editingEntryId);
 
         if (error) throw error;
 
+        closeEditModal();
         await loadEntries();
       } catch (error) {
         console.error("修改日记失败：", error);
         alert("修改失败：\n" + error.message);
+      } finally {
+        saveEditBtn.disabled = false;
+        saveEditBtn.textContent = "保存修改";
       }
-    };
+    });
 
     window.deleteEntry = async function (id) {
       const ok = confirm("确定删除这篇日记吗？");
