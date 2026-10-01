@@ -616,7 +616,7 @@ function speakNextVocabulary(){
 async function loadVocabularyViewer(){
   vocabularyList.innerHTML='<div style="padding:20px">正在读取总词库…</div>';
   vocabularyModal.style.display="flex";
-  const {data,error}=await sbClient.from("vocabulary").select("*").order("id",{ascending:false}).limit(5000);
+  const {data,error}=await sbClient.from("vocabulary").select("id,word,meaning,added_date,dictation_count,wrong_count").order("id",{ascending:false}).limit(5000);
   if(error){
     vocabularyList.innerHTML=`<div style="padding:20px">读取失败：${esc(error.message)}</div>`;
     return;
@@ -822,14 +822,46 @@ function updateD(){
  WL.innerHTML=Wrongs.length?"<b>本次错词：</b> "+Wrongs.map(x=>esc(x.word)).join("、"):"";
 }
 async function pool(){
- let q=sbClient.from("vocabulary").select("*"),mode=DM.value;
- if(mode==="today")q=q.eq("added_date",dateInput.value||todayLocal());
- if(mode==="wrong")q=q.gt("wrong_count",0).order("wrong_count",{ascending:false});
- if(mode==="smart")q=q.order("wrong_count",{ascending:false}).order("last_tested_at",{ascending:true,nullsFirst:true});
- const {data,error}=await q.limit(1000);if(error)throw error;let p=data||[];
- if(mode==="random"||mode==="today")p=shuffle(p);
- if(mode==="smart")p=p.map(x=>({x,s:(+x.wrong_count||0)*3-(+x.correct_count||0)*.15+Math.random()*2})).sort((a,b)=>b.s-a.s).map(o=>o.x);
- return p.slice(0,Math.max(1,parseInt(DC.value)||50));
+  const mode=DM.value;
+  const wanted=Math.max(1,parseInt(DC.value)||50);
+
+  // 只做一次最简单的数据库读取，筛选和排序全部放在浏览器本地完成。
+  const {data,error}=await sbClient
+    .from("vocabulary")
+    .select("id,word,meaning,added_date,dictation_count,correct_count,wrong_count,last_tested_at")
+    .limit(5000);
+
+  if(error) throw error;
+
+  let p=Array.isArray(data) ? [...data] : [];
+  const selectedDate=dateInput.value||todayLocal();
+
+  if(mode==="today"){
+    p=p.filter(x=>String(x.added_date||"").slice(0,10)===selectedDate);
+    p=shuffle(p);
+  }
+  else if(mode==="random"){
+    p=shuffle(p);
+  }
+  else if(mode==="wrong"){
+    p=p
+      .filter(x=>(Number(x.wrong_count)||0)>0)
+      .sort((a,b)=>(Number(b.wrong_count)||0)-(Number(a.wrong_count)||0));
+  }
+  else if(mode==="smart"){
+    p=p.map(x=>{
+      const wrong=Number(x.wrong_count)||0;
+      const correct=Number(x.correct_count)||0;
+      const neverTested=!x.last_tested_at;
+      const ageBonus=neverTested ? 5 : Math.min(
+        5,
+        Math.max(0,(Date.now()-new Date(x.last_tested_at).getTime())/86400000/7)
+      );
+      return {x,score:wrong*3-correct*.15+ageBonus+Math.random()*2};
+    }).sort((a,b)=>b.score-a.score).map(o=>o.x);
+  }
+
+  return p.slice(0,wanted);
 }
 function normalizeMeaning(s){
  return (s||"").toLowerCase().replace(/[（(][^）)]*[）)]/g,"").replace(/\s+/g,"").replace(/[。.!！?？]/g,"");
@@ -846,33 +878,9 @@ function checkMeaningAnswer(typed,answer){
 }
 SD.onclick=async()=>{
  try{
-   SD.disabled=true;
-   console.log("【听写诊断】开始读取词库",{
-     mode:DM.value,questionType:QT.value,
-     date:dateInput.value||todayLocal(),count:DC.value
-   });
-   DWords=await pool();
-   console.log("【听写诊断】词库读取成功",{rows:DWords.length,firstRow:DWords[0]||null});
-   if(!DWords.length)return alert("这个范围下暂无可测试单词。");
-   DIndex=0;Correct=0;Wrongs=[];Results=[];Answered=false;SessionSaved=false;
-   DA.style.display="block";updateD();renderQuestion();
- }catch(e){
-   console.error("【听写词库完整错误】",e);
-   console.error("message:",e?.message);
-   console.error("code:",e?.code);
-   console.error("details:",e?.details);
-   console.error("hint:",e?.hint);
-   console.error("name:",e?.name);
-   console.error("stack:",e?.stack);
-   alert(
-     "读取词库失败：\n"+
-     "message: "+(e?.message||"")+"\n"+
-     "code: "+(e?.code||"")+"\n"+
-     "details: "+(e?.details||"")+"\n"+
-     "hint: "+(e?.hint||"")+"\n"+
-     "name: "+(e?.name||"")
-   );
- }finally{SD.disabled=false}
+  SD.disabled=true;DWords=await pool();if(!DWords.length)return alert("这个范围下暂无可测试单词。");
+  DIndex=0;Correct=0;Wrongs=[];Results=[];Answered=false;SessionSaved=false;DA.style.display="block";updateD();renderQuestion();
+ }catch(e){alert("读取词库失败：\n"+e.message)}finally{SD.disabled=false}
 };
 $("speakWordBtn").onclick=speak;$("replayBtn").onclick=()=>{if(CurrentType==="audio")speak();else renderQuestion()};
 async function answer(forceWrong=false){
