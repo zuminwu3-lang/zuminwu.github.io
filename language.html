@@ -616,7 +616,7 @@ function speakNextVocabulary(){
 async function loadVocabularyViewer(){
   vocabularyList.innerHTML='<div style="padding:20px">正在读取总词库…</div>';
   vocabularyModal.style.display="flex";
-  const {data,error}=await sbClient.from("vocabulary").select("id,word,meaning,added_date,dictation_count,wrong_count").order("id",{ascending:false}).limit(5000);
+  const {data,error}=await sbClient.from("vocabulary").select("*").order("id",{ascending:false}).limit(5000);
   if(error){
     vocabularyList.innerHTML=`<div style="padding:20px">读取失败：${esc(error.message)}</div>`;
     return;
@@ -822,7 +822,7 @@ function updateD(){
  WL.innerHTML=Wrongs.length?"<b>本次错词：</b> "+Wrongs.map(x=>esc(x.word)).join("、"):"";
 }
 async function pool(){
- let q=sbClient.from("vocabulary").select("id,word,meaning,added_date,dictation_count,correct_count,wrong_count,last_tested_at"),mode=DM.value;
+ let q=sbClient.from("vocabulary").select("*"),mode=DM.value;
  if(mode==="today")q=q.eq("added_date",dateInput.value||todayLocal());
  if(mode==="wrong")q=q.gt("wrong_count",0).order("wrong_count",{ascending:false});
  if(mode==="smart")q=q.order("wrong_count",{ascending:false}).order("last_tested_at",{ascending:true,nullsFirst:true});
@@ -846,9 +846,33 @@ function checkMeaningAnswer(typed,answer){
 }
 SD.onclick=async()=>{
  try{
-  SD.disabled=true;DWords=await pool();if(!DWords.length)return alert("这个范围下暂无可测试单词。");
-  DIndex=0;Correct=0;Wrongs=[];Results=[];Answered=false;SessionSaved=false;DA.style.display="block";updateD();renderQuestion();
- }catch(e){alert("读取词库失败：\n"+e.message)}finally{SD.disabled=false}
+   SD.disabled=true;
+   console.log("【听写诊断】开始读取词库",{
+     mode:DM.value,questionType:QT.value,
+     date:dateInput.value||todayLocal(),count:DC.value
+   });
+   DWords=await pool();
+   console.log("【听写诊断】词库读取成功",{rows:DWords.length,firstRow:DWords[0]||null});
+   if(!DWords.length)return alert("这个范围下暂无可测试单词。");
+   DIndex=0;Correct=0;Wrongs=[];Results=[];Answered=false;SessionSaved=false;
+   DA.style.display="block";updateD();renderQuestion();
+ }catch(e){
+   console.error("【听写词库完整错误】",e);
+   console.error("message:",e?.message);
+   console.error("code:",e?.code);
+   console.error("details:",e?.details);
+   console.error("hint:",e?.hint);
+   console.error("name:",e?.name);
+   console.error("stack:",e?.stack);
+   alert(
+     "读取词库失败：\n"+
+     "message: "+(e?.message||"")+"\n"+
+     "code: "+(e?.code||"")+"\n"+
+     "details: "+(e?.details||"")+"\n"+
+     "hint: "+(e?.hint||"")+"\n"+
+     "name: "+(e?.name||"")
+   );
+ }finally{SD.disabled=false}
 };
 $("speakWordBtn").onclick=speak;$("replayBtn").onclick=()=>{if(CurrentType==="audio")speak();else renderQuestion()};
 async function answer(forceWrong=false){
