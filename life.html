@@ -280,12 +280,57 @@ button:disabled{
 .edit-modal.show{display:flex}.edit-dialog{width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border:1px solid #ecece8;border-radius:22px;padding:22px}
 #editContentInput{width:100%;min-height:320px;max-height:60vh;line-height:1.8}.edit-buttons{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}.edit-buttons .cancel{background:#f1f1ed;color:#555}
 @media(max-width:800px){.edit-modal{padding:10px}.edit-dialog{padding:16px}#editContentInput{min-height:55vh}.edit-buttons button{flex:1}}
+
+/* ===== 日常密码锁 ===== */
+#lifeLoginGate{
+    position:fixed; inset:0; z-index:99999;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px; background:#fafaf8;
+}
+.life-login-box{
+    width:min(420px,100%); background:#fff;
+    border:1px solid #ecece8; border-radius:28px;
+    padding:34px; box-shadow:0 18px 60px rgba(0,0,0,.08);
+}
+.life-login-box h1{font-size:34px;margin:0 0 8px}
+.life-login-box p{color:#888;margin:0 0 24px;line-height:1.7}
+#lifePassword{
+    width:100%; padding:14px 16px; border:1px solid #ddd;
+    border-radius:14px; font:inherit; font-size:16px; outline:none;
+}
+#lifePassword:focus{border-color:#999}
+.life-login-actions{display:flex;gap:10px;margin-top:14px}
+.life-login-actions button{flex:1}
+#lifeLoginError{min-height:22px;margin-top:12px;color:#b33;font-size:13px}
+#lifeApp{display:none}
+.life-logout{
+    position:fixed; right:22px; top:20px; z-index:900;
+    padding:8px 15px; background:#f0f0ec; color:#666;
+    font-size:13px;
+}
+.life-logout:hover{background:#e5e5df}
+
 </style>
 
 </head>
 
 
 <body>
+<div id="lifeLoginGate">
+  <div class="life-login-box">
+    <h1>日常</h1>
+    <p>请输入访问密码。</p>
+    <input id="lifePassword" type="password" placeholder="密码" autocomplete="current-password">
+    <div class="life-login-actions">
+      <button id="lifeLoginBtn">进入</button>
+    </div>
+    <div id="lifeLoginError"></div>
+  </div>
+</div>
+
+<div id="lifeApp">
+<button id="lifeLogoutBtn" class="life-logout" type="button">退出</button>
+
 
 <a href="index.html">
 ← 返回首页
@@ -1165,10 +1210,63 @@ publishBtn.addEventListener(
 );
 
 
-loadMoments();
+// 登录成功后再加载日常。
 
 </script>
 
+
+</div>
+
+<script>
+(function(){
+  const gate=document.getElementById("lifeLoginGate");
+  const app=document.getElementById("lifeApp");
+  const input=document.getElementById("lifePassword");
+  const btn=document.getElementById("lifeLoginBtn");
+  const err=document.getElementById("lifeLoginError");
+  const logout=document.getElementById("lifeLogoutBtn");
+  const SESSION_KEY="zumin_life_unlocked";
+
+  function openLife(){
+    gate.style.display="none";
+    app.style.display="block";
+    sessionStorage.setItem(SESSION_KEY,"1");
+    if(typeof loadMoments==="function") loadMoments();
+  }
+
+  async function login(){
+    const password=input.value;
+    if(!password){err.textContent="请输入密码。";input.focus();return;}
+    btn.disabled=true; btn.textContent="验证中…"; err.textContent="";
+    try{
+      const {data,error}=await sbClient.rpc("verify_life_password",{p_password:password});
+      if(error) throw error;
+      if(data===true){
+        input.value="";
+        openLife();
+      }else{
+        err.textContent="密码错误。";
+        input.select();
+      }
+    }catch(e){
+      console.error(e);
+      err.textContent="验证失败："+(e.message||"未知错误");
+    }finally{
+      btn.disabled=false; btn.textContent="进入";
+    }
+  }
+
+  btn.addEventListener("click",login);
+  input.addEventListener("keydown",e=>{if(e.key==="Enter")login();});
+  logout.addEventListener("click",()=>{
+    sessionStorage.removeItem(SESSION_KEY);
+    location.reload();
+  });
+
+  if(sessionStorage.getItem(SESSION_KEY)==="1") openLife();
+  else setTimeout(()=>input.focus(),0);
+})();
+</script>
 </body>
 
 </html>
