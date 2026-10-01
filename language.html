@@ -202,7 +202,7 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
         <option value="wrong">历史错词</option>
         <option value="smart">智能复习</option>
       </select>
-      <input id="drawCount" type="number" min="1" value="50" style="width:110px">
+      <input id="drawCount" type="number" min="1" value="10" style="width:110px">
       <button id="startDictationBtn" class="primary" type="button">开始测试</button>
     </div>
     <div id="dictationArea" class="dictation-area">
@@ -283,6 +283,36 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const AUDIO_BUCKET = "language-audio";
 
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ===== 词库读取：直接调用 Supabase REST，绕开 supabase-js 查询构造器 =====
+async function vocabRestGet(queryString=""){
+  const url = `${SUPABASE_URL}/rest/v1/vocabulary${queryString ? "?" + queryString : ""}`;
+  const response = await fetch(url,{
+    method:"GET",
+    headers:{
+      "apikey":SUPABASE_ANON_KEY,
+      "Authorization":`Bearer ${SUPABASE_ANON_KEY}`,
+      "Accept":"application/json"
+    },
+    cache:"no-store"
+  });
+
+  const raw = await response.text();
+  if(!response.ok){
+    let msg=raw;
+    try{
+      const j=JSON.parse(raw);
+      msg=j.message || j.details || raw;
+    }catch(_){}
+    throw new Error(`词库 REST ${response.status}: ${msg}`);
+  }
+
+  try{
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){
+    throw new Error("词库返回的数据不是有效 JSON");
+  }
+}
 const $ = id => document.getElementById(id);
 
 const dateInput=$("dateInput"), titleInput=$("titleInput"), contentInput=$("contentInput");
@@ -616,13 +646,16 @@ function speakNextVocabulary(){
 async function loadVocabularyViewer(){
   vocabularyList.innerHTML='<div style="padding:20px">正在读取总词库…</div>';
   vocabularyModal.style.display="flex";
-  const {data,error}=await sbClient.from("vocabulary").select("id,word,meaning,added_date,dictation_count,wrong_count").order("id",{ascending:false}).limit(5000);
-  if(error){
+  try{
+    const data=await vocabRestGet(
+      "select=id,word,meaning,added_date,dictation_count,wrong_count&order=id.desc&limit=5000"
+    );
+    VocabularyCache=Array.isArray(data)?data:[];
+    renderVocabularyViewer();
+  }catch(error){
+    console.error("总词库读取失败",error);
     vocabularyList.innerHTML=`<div style="padding:20px">读取失败：${esc(error.message)}</div>`;
-    return;
   }
-  VocabularyCache=data||[];
-  renderVocabularyViewer();
 }
 function renderVocabularyViewer(){
   let q=(vocabularySearch.value||"").trim().toLowerCase();
@@ -774,8 +807,13 @@ function parseWords(raw){
  });return [...m.values()];
 }
 async function refreshCount(){
- const {count,error}=await sbClient.from("vocabulary").select("*",{count:"exact",head:true});
- WC.textContent=error?"词库读取失败":`总词库 ${count||0}`;
+  try{
+    const rows=await vocabRestGet("select=id&limit=5000");
+    WC.textContent=`总词库 ${rows.length}`;
+  }catch(e){
+    console.error("词库计数失败",e);
+    WC.textContent="词库读取失败";
+  }
 }
 RW.onclick=refreshCount;
 UW.onclick=async()=>{
@@ -823,46 +861,37 @@ function updateD(){
 }
 async function pool(){
   const mode=DM.value;
-  const wanted=Math.max(1,parseInt(DC.value)||50);
+  const wanted=Math.max(1,parseInt(DC.value)||10);
 
-  // 只做一次最简单的数据库读取，筛选和排序全部放在浏览器本地完成。
-  const {data,error}=await sbClient
-    .from("vocabulary")
-    .select("id,word,meaning,added_date,dictation_count,correct_count,wrong_count,last_tested_at")
-    .limit(5000);
+  // 不再通过 supabase-js 读取词库；直接使用 REST API。
+  const data=await vocabRestGet(
+    "select=id,word,meaning,added_date,dictation_count,correct_count,wrong_count,last_tested_at&limit=5000"
+  );
 
-  if(error) throw error;
-
-  let p=Array.isArray(data) ? [...data] : [];
+  let p=Array.isArray(data)?[...data]:[];
   const selectedDate=dateInput.value||todayLocal();
 
   if(mode==="today"){
     p=p.filter(x=>String(x.added_date||"").slice(0,10)===selectedDate);
     p=shuffle(p);
-  }
-  else if(mode==="random"){
+  }else if(mode==="random"){
     p=shuffle(p);
-  }
-  else if(mode==="wrong"){
-    p=p
-      .filter(x=>(Number(x.wrong_count)||0)>0)
-      .sort((a,b)=>(Number(b.wrong_count)||0)-(Number(a.wrong_count)||0));
-  }
-  else if(mode==="smart"){
+  }else if(mode==="wrong"){
+    p=p.filter(x=>(Number(x.wrong_count)||0)>0)
+       .sort((a,b)=>(Number(b.wrong_count)||0)-(Number(a.wrong_count)||0));
+  }else if(mode==="smart"){
     p=p.map(x=>{
       const wrong=Number(x.wrong_count)||0;
       const correct=Number(x.correct_count)||0;
-      const neverTested=!x.last_tested_at;
-      const ageBonus=neverTested ? 5 : Math.min(
-        5,
-        Math.max(0,(Date.now()-new Date(x.last_tested_at).getTime())/86400000/7)
-      );
+      const last=x.last_tested_at ? new Date(x.last_tested_at).getTime() : 0;
+      const ageBonus=!last ? 5 : Math.min(5,Math.max(0,(Date.now()-last)/86400000/7));
       return {x,score:wrong*3-correct*.15+ageBonus+Math.random()*2};
     }).sort((a,b)=>b.score-a.score).map(o=>o.x);
   }
 
   return p.slice(0,wanted);
 }
+
 function normalizeMeaning(s){
  return (s||"").toLowerCase().replace(/[（(][^）)]*[）)]/g,"").replace(/\s+/g,"").replace(/[。.!！?？]/g,"");
 }
