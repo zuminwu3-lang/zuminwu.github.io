@@ -616,7 +616,7 @@ function speakNextVocabulary(){
 async function loadVocabularyViewer(){
   vocabularyList.innerHTML='<div style="padding:20px">正在读取总词库…</div>';
   vocabularyModal.style.display="flex";
-  const {data,error}=await sbClient.from("vocabulary").select("*").order("id",{ascending:false}).limit(5000);
+  const {data,error}=await sbClient.from("vocabulary").select("id,word,meaning,added_date,dictation_count,wrong_count").order("id",{ascending:false}).limit(5000);
   if(error){
     vocabularyList.innerHTML=`<div style="padding:20px">读取失败：${esc(error.message)}</div>`;
     return;
@@ -822,7 +822,7 @@ function updateD(){
  WL.innerHTML=Wrongs.length?"<b>本次错词：</b> "+Wrongs.map(x=>esc(x.word)).join("、"):"";
 }
 async function pool(){
- let q=sbClient.from("vocabulary").select("*"),mode=DM.value;
+ let q=sbClient.from("vocabulary").select("id,word,meaning,added_date,dictation_count,correct_count,wrong_count,last_tested_at"),mode=DM.value;
  if(mode==="today")q=q.eq("added_date",dateInput.value||todayLocal());
  if(mode==="wrong")q=q.gt("wrong_count",0).order("wrong_count",{ascending:false});
  if(mode==="smart")q=q.order("wrong_count",{ascending:false}).order("last_tested_at",{ascending:true,nullsFirst:true});
